@@ -11,956 +11,916 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-    body { background: #fdf8f3; font-family: 'Jost', sans-serif; overscroll-behavior: none; }
-    ::-webkit-scrollbar { width: 4px; }
-    ::-webkit-scrollbar-thumb { background: #edddd0; border-radius: 2px; }
-    input, select, textarea, button { font-family: 'Jost', sans-serif; }
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+    html,body,#root{height:100%}
+    body{background:#fdf8f3;font-family:'Jost',sans-serif;overscroll-behavior:none}
+    ::-webkit-scrollbar{width:4px}
+    ::-webkit-scrollbar-thumb{background:#edddd0;border-radius:2px}
+    input,select,textarea,button{font-family:'Jost',sans-serif}
+    .monet-hero{
+      position:relative;overflow:hidden;
+      background:linear-gradient(160deg,#c9b99a 0%,#a8c5b5 30%,#7fa8c0 55%,#9bb5a8 75%,#d4c4a0 100%);
+      padding:52px 20px 28px;border-radius:0 0 28px 28px;
+    }
+    .monet-hero::before{
+      content:'';position:absolute;inset:0;
+      background:
+        radial-gradient(ellipse 60% 40% at 20% 30%,rgba(255,240,210,0.45) 0%,transparent 70%),
+        radial-gradient(ellipse 50% 60% at 80% 20%,rgba(180,210,230,0.5) 0%,transparent 65%),
+        radial-gradient(ellipse 40% 50% at 60% 80%,rgba(160,190,170,0.4) 0%,transparent 60%),
+        radial-gradient(ellipse 30% 30% at 10% 70%,rgba(220,200,160,0.35) 0%,transparent 55%);
+      mix-blend-mode:overlay;pointer-events:none;
+    }
+    .monet-hero::after{
+      content:'';position:absolute;inset:0;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+      opacity:0.4;pointer-events:none;
+    }
   </style>
 </head>
 <body>
-  <div id="root"></div>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<script type="text/babel">
+const {useState,useEffect,useCallback,useRef}=React;
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+const C={cream:”#fdf8f3”,parchment:”#f5ede0”,blush:”#f0d4c8”,rose:”#e8b4a0”,roseDark:”#c4836a”,berry:”#8b3a5e”,berryLight:”#f5e6ed”,mauve:”#d4a5b5”,sage:”#b8c4b1”,sageDark:”#7a9470”,sageLight:”#edf2eb”,charcoal:”#2c2420”,warm:”#6b5548”,muted:”#a89080”,cardBg:”#fffcf8”,border:”#edddd0”};
+const SH=“0 2px 12px rgba(139,58,94,0.06)”;
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+const pad=n=>String(n).padStart(2,“0”);
+const todayKey=()=>new Date().toISOString().slice(0,10);
+const DAY_NO=[“Søndag”,“Mandag”,“Tirsdag”,“Onsdag”,“Torsdag”,“Fredag”,“Lørdag”];
+const MON_NO=[“januar”,“februar”,“mars”,“april”,“mai”,“juni”,“juli”,“august”,“september”,“oktober”,“november”,“desember”];
+const MON_S=[“jan”,“feb”,“mar”,“apr”,“mai”,“jun”,“jul”,“aug”,“sep”,“okt”,“nov”,“des”];
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+function getGreeting(){const h=new Date().getHours();if(h>=5&&h<11)return”God morgen”;if(h>=11&&h<13)return”God formiddag”;if(h>=13&&h<17)return”God ettermiddag”;if(h>=17&&h<21)return”God kveld”;return”God natt”;}
+function getWeekNumber(d){const date=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));date.setUTCDate(date.getUTCDate()+4-(date.getUTCDay()||7));const ys=new Date(Date.UTC(date.getUTCFullYear(),0,1));return Math.ceil((((date-ys)/86400000)+1)/7);}
+function isEvenWeek(){return getWeekNumber(new Date())%2===0;}
 
-  <script type="text/babel">
-    const { useState, useEffect, useCallback } = React;
+function useStore(key,initial){
+const[val,setVal]=useState(()=>{try{const s=localStorage.getItem(key);return s?JSON.parse(s):initial;}catch{return initial;}});
+const save=useCallback(v=>{setVal(v);try{localStorage.setItem(key,JSON.stringify(v));}catch{};},[key]);
+return[val,save];
+}
 
-    const C = {
-      cream:     "#fdf8f3",
-      parchment: "#f5ede0",
-      blush:     "#f0d4c8",
-      rose:      "#e8b4a0",
-      roseDark:  "#c4836a",
-      berry:     "#8b3a5e",
-      berryLight:"#f5e6ed",
-      mauve:     "#d4a5b5",
-      sage:      "#b8c4b1",
-      sageDark:  "#7a9470",
-      sageLight: "#edf2eb",
-      charcoal:  "#2c2420",
-      warm:      "#6b5548",
-      muted:     "#a89080",
-      cardBg:    "#fffcf8",
-      border:    "#edddd0",
-    };
-    const shadow = "0 2px 12px rgba(139,58,94,0.06)";
+// ── Clock ──────────────────────────────────────────────────────────────────
+function Clock({photo,onPhoto}){
+const[time,setTime]=useState(new Date());
+useEffect(()=>{const t=setInterval(()=>setTime(new Date()),1000);return()=>clearInterval(t);},[]);
+const fileRef=useRef();
+return(
+<div style={{display:“flex”,alignItems:“flex-start”,gap:14,position:“relative”,zIndex:1}}>
+{/* Profile photo */}
+<div onClick={()=>fileRef.current.click()} style={{width:56,height:56,borderRadius:“50%”,border:“2px solid rgba(255,255,255,0.6)”,overflow:“hidden”,flexShrink:0,cursor:“pointer”,background:“rgba(255,255,255,0.2)”,display:“flex”,alignItems:“center”,justifyContent:“center”}}>
+{photo?<img src={photo} style={{width:“100%”,height:“100%”,objectFit:“cover”}}/>:<span style={{fontSize:22,opacity:0.7}}>👤</span>}
+<input ref={fileRef} type=“file” accept=“image/*” style={{display:“none”}} onChange={e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>onPhoto(ev.target.result);r.readAsDataURL(f);}}/>
+</div>
+<div>
+<div style={{fontFamily:”‘Cormorant Garamond’,serif”,fontSize:64,fontWeight:300,letterSpacing:-2,color:”#fff”,lineHeight:1,textShadow:“0 2px 12px rgba(0,0,0,0.15)”}}>
+{pad(time.getHours())}:{pad(time.getMinutes())}<span style={{fontSize:28,opacity:0.5,marginLeft:4}}>{pad(time.getSeconds())}</span>
+</div>
+<div style={{fontSize:11,color:“rgba(255,255,255,0.75)”,marginTop:4,letterSpacing:1.5,textTransform:“uppercase”,fontWeight:300}}>
+{DAY_NO[time.getDay()]} · {time.getDate()}. {MON_NO[time.getMonth()]} {time.getFullYear()}
+</div>
+</div>
+</div>
+);
+}
 
-    const pad = (n) => String(n).padStart(2, "0");
-    const todayKey = () => new Date().toISOString().slice(0, 10);
-    const DAY_NO = ["Søndag","Mandag","Tirsdag","Onsdag","Torsdag","Fredag","Lørdag"];
-    const MON_NO = ["januar","februar","mars","april","mai","juni","juli","august","september","oktober","november","desember"];
-    const MON_S  = ["jan","feb","mar","apr","mai","jun","jul","aug","sep","okt","nov","des"];
+// ── Water ──────────────────────────────────────────────────────────────────
+function WaterDrop({filled,onClick}){
+const id=filled?“dF”:“dE”;
+return(<svg onClick={onClick} width=“26” height=“32” viewBox=“0 0 28 34” style={{cursor:“pointer”,transition:“transform 0.15s”,flexShrink:0}} onMouseEnter={e=>e.currentTarget.style.transform=“scale(1.15)”} onMouseLeave={e=>e.currentTarget.style.transform=“scale(1)”}>
+<defs><linearGradient id={id} x1="0" y1="0" x2="0" y2="1"><stop offset=“0%” stopColor={filled?”#7ec8e3”:”#edddd0”}/><stop offset=“100%” stopColor={filled?”#4a9fc4”:”#d9c4b5”}/></linearGradient></defs>
+<path d=“M14 2 C14 2 4 14 4 21 a10 10 0 0 0 20 0 C24 14 14 2 14 2Z” fill={“url(#”+id+”)”} stroke={filled?”#4a9fc4”:”#d9c4b5”} strokeWidth=“0.5”/>
+{filled&&<ellipse cx="10" cy="19" rx="2.5" ry="4" fill="rgba(255,255,255,0.25)"/>}
+</svg>);
+}
+function WaterMini({data,onChange}){
+const glasses=data[todayKey()]||0,goal=7;
+const add=()=>onChange({…data,[todayKey()]:Math.min(goal+2,glasses+1)});
+const rem=()=>onChange({…data,[todayKey()]:Math.max(0,glasses-1)});
+return(<div>
+<div style={{display:“flex”,justifyContent:“space-between”,marginBottom:8}}>
+<span style={{fontSize:10,color:C.muted,textTransform:“uppercase”,letterSpacing:1.2,fontWeight:500}}>Vann</span>
+<span style={{fontSize:11,color:C.warm}}>{glasses*300}ml / 2100ml</span>
+</div>
+<div style={{display:“flex”,gap:3,flexWrap:“wrap”,justifyContent:“center”}}>
+{Array.from({length:goal}).map((_,i)=><WaterDrop key={i} filled={i<glasses} onClick={i<glasses?rem:add}/>)}
+</div>
+<div style={{fontSize:9,color:glasses>=goal?C.sageDark:C.muted,textAlign:“center”,marginTop:5}}>{glasses>=goal?“✓ Dagsmål nådd”:(goal-glasses)+” glass igjen”}</div>
 
-    function getGreeting() {
-      const h = new Date().getHours();
-      if (h >= 5  && h < 11) return "God morgen";
-      if (h >= 11 && h < 13) return "God formiddag";
-      if (h >= 13 && h < 17) return "God ettermiddag";
-      if (h >= 17 && h < 21) return "God kveld";
-      return "God natt";
-    }
+  </div>);
+}
 
-    function getWeekNumber(d) {
-      const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-      date.setUTCDate(date.getUTCDate() + 4 - (date.getUTCDay() || 7));
-      const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
-      return Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
-    }
+// ── PCOS glass ──────────────────────────────────────────────────────────────
+function PCOSGlass({done,onClick,label}){
+return(<div onClick={onClick} onMouseEnter={e=>e.currentTarget.style.transform=“scale(1.05)”} onMouseLeave={e=>e.currentTarget.style.transform=“scale(1)”} style={{transition:“transform 0.15s”,cursor:“pointer”,display:“flex”,flexDirection:“column”,alignItems:“center”,gap:4}}>
+<svg width="34" height="46" viewBox="0 0 36 48">
+<defs><linearGradient id={“g”+(done?“1”:“0”)} x1=“0” y1=“0” x2=“0” y2=“1”><stop offset=“0%” stopColor={done?”#c4527a”:”#f0c8d8”}/><stop offset=“100%” stopColor={done?”#8b3a5e”:”#e8b4c4”}/></linearGradient></defs>
+<path d=“M7 6 L4 44 Q4 46 6 46 L30 46 Q32 46 32 44 L29 6 Z” fill={“url(#g”+(done?“1”:“0”)+”)”} stroke={done?”#8b3a5e”:”#e0b0c0”} strokeWidth=“1.2”/>
+{done&&<ellipse cx="14" cy="20" rx="4" ry="8" fill="rgba(255,255,255,0.18)"/>}
+<rect x=“5” y=“5” width=“26” height=“4” rx=“2” fill={done?”#c4527a”:”#f0c8d8”}/>
+<rect x=“22” y=”-2” width=“3.5” height=“34” rx=“1.5” transform=“rotate(8,22,0)” fill={done?”#f9a8c4”:”#f5d0e0”} stroke={done?”#e07090”:”#e8b8cc”} strokeWidth=“0.5”/>
+{done&&<text x="18" y="40" textAnchor="middle" fontSize="10" fill="rgba(255,255,255,0.9)">✓</text>}
+</svg>
+<span style={{fontSize:10,color:done?C.berry:C.muted,fontWeight:500,textAlign:“center”}}>{label}</span>
 
-    function useStore(key, initial) {
-      const [val, setVal] = useState(() => {
-        try { const s = localStorage.getItem(key); return s ? JSON.parse(s) : initial; }
-        catch { return initial; }
-      });
-      const save = useCallback((v) => {
-        setVal(v);
-        try { localStorage.setItem(key, JSON.stringify(v)); } catch {}
-      }, [key]);
-      return [val, save];
-    }
+  </div>);
+}
+function FishOilCapsule({done}){
+  return(<svg width="42" height="20" viewBox="0 0 44 22">
+    <defs><linearGradient id={"c"+(done?"1":"0")} x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor={done?"#e8a050":"#f0d8b8"}/><stop offset="50%" stopColor={done?"#f0c060":"#f8eccc"}/><stop offset="100%" stopColor={done?"#d08030":"#e8c8a0"}/></linearGradient></defs>
+    <ellipse cx="22" cy="11" rx="20" ry="9" fill={"url(#c"+(done?"1":"0")+")"} stroke={done?"#c07020":"#d8b888"} strokeWidth="0.8"/>
+    <ellipse cx="16" cy="8" rx="4" ry="3" fill="rgba(255,255,255,0.3)"/>
+    {done&&<text x="22" y="15" textAnchor="middle" fontSize="9" fill="rgba(255,255,255,0.85)">✓</text>}
+  </svg>);
+}
 
-    function Clock() {
-      const [time, setTime] = useState(new Date());
-      useEffect(() => { const t = setInterval(() => setTime(new Date()), 1000); return () => clearInterval(t); }, []);
-      return (
-        <div style={{ lineHeight: 1 }}>
-          <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 76, fontWeight: 300, letterSpacing: -2, color: "#fff", lineHeight: 1 }}>
-            {pad(time.getHours())}:{pad(time.getMinutes())}
-            <span style={{ fontSize: 34, opacity: 0.45, marginLeft: 6, fontWeight: 300 }}>{pad(time.getSeconds())}</span>
-          </div>
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", marginTop: 5, letterSpacing: 1.5, textTransform: "uppercase", fontFamily: "'Jost', sans-serif", fontWeight: 300 }}>
-            {DAY_NO[time.getDay()]} · {time.getDate()}. {MON_NO[time.getMonth()]} {time.getFullYear()}
-          </div>
+function SupplMini({data,onChange,full}){
+const today=todayKey(),day=new Date().getDay(),log=data[today]||{};
+const toggle=k=>onChange({…data,[today]:{…log,[k]:!log[k]}});
+const isClove=day===3||day===6;
+return(<div>
+{full&&<div style={{fontSize:10,color:C.muted,textTransform:“uppercase”,letterSpacing:1.2,fontWeight:500,marginBottom:12}}>Tilskudd i dag</div>}
+<div style={{display:“flex”,gap:10,justifyContent:“center”,marginBottom:12}}>
+<PCOSGlass done={!!log.pcos_m} onClick={()=>toggle(“pcos_m”)} label=“Morgen”/>
+<PCOSGlass done={!!log.pcos_d} onClick={()=>toggle(“pcos_d”)} label=“Middag”/>
+{isClove&&<div onClick={()=>toggle(“nellik”)} onMouseEnter={e=>e.currentTarget.style.transform=“scale(1.05)”} onMouseLeave={e=>e.currentTarget.style.transform=“scale(1)”} style={{cursor:“pointer”,display:“flex”,flexDirection:“column”,alignItems:“center”,gap:4,transition:“transform 0.15s”}}>
+<div style={{fontSize:26}}>🌿</div>
+<span style={{fontSize:10,color:log.nellik?C.sageDark:C.muted,fontWeight:500}}>{log.nellik?“✓ Nellik”:“Nellik”}</span>
+</div>}
+</div>
+<div style={{background:C.parchment,borderRadius:10,padding:“9px 12px”}}>
+<div style={{fontSize:10,color:C.muted,textTransform:“uppercase”,letterSpacing:1,fontWeight:500,marginBottom:6}}>Tran · 3 kapsler</div>
+<div style={{display:“flex”,gap:8,justifyContent:“center”}}>{[0,1,2].map(i=><FishOilCapsule key={i} done={i<(log.tran||0)}/>)}</div>
+<div style={{display:“flex”,gap:6,justifyContent:“center”,marginTop:6}}>
+<button onClick={()=>onChange({…data,[today]:{…log,tran:Math.max(0,(log.tran||0)-1)}})} style={{width:26,height:26,borderRadius:7,border:“1px solid “+C.border,background:”#fff”,cursor:“pointer”,fontSize:13,color:C.warm}}>−</button>
+<span style={{fontSize:12,color:C.warm,lineHeight:“26px”}}>{log.tran||0}/3</span>
+<button onClick={()=>onChange({…data,[today]:{…log,tran:Math.min(3,(log.tran||0)+1)}})} style={{width:26,height:26,borderRadius:7,border:“1px solid “+C.border,background:”#fff”,cursor:“pointer”,fontSize:13,color:C.warm}}>+</button>
+</div>
+</div>
+{!isClove&&<div style={{fontSize:9,color:C.blush,marginTop:5,textAlign:“center”}}>Nellik: onsdag & lørdag</div>}
+
+  </div>);
+}
+
+// ── Sleep log ───────────────────────────────────────────────────────────────
+function SleepLog({data,onChange,settings,onSettings}){
+const today=todayKey(),log=data[today]||{};
+const[editing,setEditing]=useState(false);
+const wakeH=settings.wakeHour??6,wakeM=settings.wakeMin??30;
+const bedH=((wakeH-9+24)%24);
+const setTime=(field,val)=>onChange({…data,[today]:{…log,[field]:val}});
+// stats last 7 days
+const days=Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()-i);return d.toISOString().slice(0,10);}).reverse();
+return(<div>
+<div style={{display:“flex”,justifyContent:“space-between”,marginBottom:8}}>
+<span style={{fontSize:10,color:C.muted,textTransform:“uppercase”,letterSpacing:1,fontWeight:500}}>Søvn · 9 timer</span>
+<button onClick={()=>setEditing(!editing)} style={{fontSize:11,color:C.roseDark,background:“none”,border:“none”,cursor:“pointer”}}>Endre mål</button>
+</div>
+{editing&&<div style={{display:“flex”,gap:6,alignItems:“center”,flexWrap:“wrap”,marginBottom:10,padding:“8px 10px”,background:C.parchment,borderRadius:10}}>
+<span style={{fontSize:12,color:C.warm}}>Vekking:</span>
+<input type=“number” min={0} max={23} value={wakeH} onChange={e=>onSettings({…settings,wakeHour:parseInt(e.target.value)})} style={{width:42,padding:“4px 6px”,borderRadius:7,border:“1.5px solid “+C.border,fontSize:13,outline:“none”,background:C.cream}}/>
+<span>:</span>
+<input type=“number” min={0} max={59} value={wakeM} onChange={e=>onSettings({…settings,wakeMin:parseInt(e.target.value)})} style={{width:42,padding:“4px 6px”,borderRadius:7,border:“1.5px solid “+C.border,fontSize:13,outline:“none”,background:C.cream}}/>
+<button onClick={()=>setEditing(false)} style={{padding:“4px 12px”,borderRadius:14,background:C.charcoal,color:”#fff”,border:“none”,cursor:“pointer”,fontSize:12}}>OK</button>
+</div>}
+<div style={{display:“flex”,gap:8,marginBottom:12}}>
+{[{label:“Mål vekking”,val:pad(wakeH)+”:”+pad(wakeM),emoji:“🌅”},{label:“Mål leggetid”,val:pad(bedH)+”:”+pad(wakeM),emoji:“🌙”}].map(item=>(
+<div key={item.label} style={{flex:1,padding:“8px 10px”,background:C.parchment,borderRadius:10,border:“1px solid “+C.border,textAlign:“center”}}>
+<div style={{fontSize:14,marginBottom:2}}>{item.emoji}</div>
+<div style={{fontSize:9,color:C.muted,textTransform:“uppercase”,letterSpacing:0.7,marginBottom:2}}>{item.label}</div>
+<div style={{fontFamily:”‘Cormorant Garamond’,serif”,fontSize:20,color:C.charcoal}}>{item.val}</div>
+</div>
+))}
+</div>
+<div style={{display:“flex”,gap:8,marginBottom:10}}>
+{[{field:“sleptAt”,label:“Jeg la meg”,emoji:“🌙”},{field:“wokeAt”,label:“Jeg stod opp”,emoji:“☀️”}].map(f=>(
+<div key={f.field} style={{flex:1,background:C.cream,borderRadius:10,border:“1px solid “+C.border,padding:“8px 10px”,textAlign:“center”}}>
+<div style={{fontSize:12,marginBottom:4}}>{f.emoji}</div>
+<div style={{fontSize:9,color:C.muted,textTransform:“uppercase”,letterSpacing:0.7,marginBottom:6}}>{f.label}</div>
+<input type=“time” value={log[f.field]||””} onChange={e=>setTime(f.field,e.target.value)} style={{width:“100%”,padding:“4px 6px”,borderRadius:7,border:“1.5px solid “+C.border,fontSize:13,background:”#fff”,outline:“none”,textAlign:“center”}}/>
+</div>
+))}
+</div>
+<div style={{display:“flex”,gap:3}}>
+{days.map(k=>{const d=data[k]||{};const hasData=d.sleptAt||d.wokeAt;return(
+<div key={k} style={{flex:1,textAlign:“center”,padding:“4px 2px”,borderRadius:6,background:hasData?C.berryLight:C.parchment,border:“1px solid “+(k===today?C.berry:C.border)}}>
+<div style={{fontSize:8,color:C.muted,textTransform:“uppercase”}}>{DAY_NO[new Date(k+“T12:00:00”).getDay()].slice(0,2)}</div>
+<div style={{fontSize:9,color:hasData?C.berry:C.muted,fontWeight:500}}>{d.wokeAt||”-”}</div>
+</div>
+);})}
+</div>
+<div style={{fontSize:9,color:C.muted,marginTop:6,textAlign:“center”}}>Husk å dusje før du legger deg 🛁</div>
+
+  </div>);
+}
+
+// ── Skincare rotation ───────────────────────────────────────────────────────
+function SkincareTracker({data,onChange}){
+const today=todayKey(),day=new Date().getDay(),week=getWeekNumber(new Date());
+const even=week%2===0,log=data[today]||{};
+const toggle=(k,val)=>{
+const cur=log[k];
+if(cur===val)onChange({…data,[today]:{…log,[k]:null}});
+else onChange({…data,[today]:{…log,[k]:val}});
+};
+// Azelaic: even weeks Mon,Wed,Fri,Sun (0,3,5) — odd Tue,Thu,Sat (2,4,6)
+const azelaicDays=even?[1,3,5,0]:[2,4,6];
+// Retinal: even Tue,Thu,Sat — odd Mon,Wed,Fri,Sun
+const retinalDays=even?[2,4,6]:[1,3,5,0];
+const showAzelaic=azelaicDays.includes(day);
+const showRetinal=retinalDays.includes(day);
+const ITEMS=[
+{key:“solkrem”,label:“Solkrem”,time:“morgen”,emoji:“☀️”,always:true,skip:false},
+…(showAzelaic?[{key:“azelaic”,label:“Azelaic acid (ansikt)”,time:“kveld”,emoji:“🧴”,always:false}]:[]),
+…(showRetinal?[{key:“retinal”,label:“Retinal (ansikt)”,time:“kveld”,emoji:“✨”,always:false}]:[]),
+…(showRetinal?[{key:“retinal_body”,label:“Retinal (hyperpigm.)”,time:“kveld”,emoji:“🩹”,always:false}]:[]),
+{key:“spotcream”,label:“Spotcream”,time:“kveld”,emoji:“💧”,always:true},
+];
+const statDays=Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()-i);return d.toISOString().slice(0,10);}).reverse();
+return(<div>
+<div style={{display:“flex”,flexDirection:“column”,gap:5,marginBottom:12}}>
+{ITEMS.map(item=>{
+const val=log[item.key];
+const done=val===“done”,skipped=val===“skipped”;
+return(<div key={item.key} style={{padding:“7px 10px”,borderRadius:10,background:done?C.sageLight:skipped?”#f5f5f0”:C.cream,border:“1px solid “+(done?C.sage:skipped?”#d0ccc0”:C.border),display:“flex”,alignItems:“center”,gap:8}}>
+<span style={{fontSize:14}}>{item.emoji}</span>
+<div style={{flex:1}}>
+<div style={{fontSize:12,color:done?C.sageDark:skipped?C.muted:C.charcoal}}>{item.label}</div>
+<div style={{fontSize:9,color:C.muted,textTransform:“uppercase”,letterSpacing:0.5}}>{item.time}</div>
+</div>
+<div style={{display:“flex”,gap:4}}>
+<button onClick={()=>toggle(item.key,“done”)} style={{padding:“3px 8px”,borderRadius:10,fontSize:10,background:done?C.sageDark:”#fff”,color:done?”#fff”:C.warm,border:“1px solid “+(done?C.sageDark:C.border),cursor:“pointer”}}>✓</button>
+<button onClick={()=>toggle(item.key,“skipped”)} style={{padding:“3px 8px”,borderRadius:10,fontSize:10,background:skipped?”#aaa”:”#fff”,color:skipped?”#fff”:C.muted,border:“1px solid “+(skipped?”#aaa”:C.border),cursor:“pointer”}}>Hoppet over</button>
+</div>
+</div>);
+})}
+</div>
+<div style={{fontSize:10,color:C.muted,marginBottom:6,fontWeight:500}}>Siste 7 dager — solkrem</div>
+<div style={{display:“flex”,gap:3}}>
+{statDays.map(k=>{const d=data[k]||{};const done=d.solkrem===“done”,skip=d.solkrem===“skipped”;return(
+<div key={k} style={{flex:1,textAlign:“center”,padding:“3px 1px”,borderRadius:5,background:done?C.sageLight:skip?”#f5f5f0”:C.parchment}}>
+<div style={{fontSize:8,color:C.muted,textTransform:“uppercase”}}>{DAY_NO[new Date(k+“T12:00:00”).getDay()].slice(0,2)}</div>
+<div style={{fontSize:10}}>{done?“✓”:skip?”–”:”·”}</div>
+</div>
+);})}
+</div>
+{!showAzelaic&&!showRetinal&&<div style={{fontSize:9,color:C.blush,marginTop:6,textAlign:“center”}}>Ingen aktive ved kvelden i dag utenom spotcream</div>}
+
+  </div>);
+}
+
+// ── Menstrual ──────────────────────────────────────────────────────────────
+function MenstrualTracker({data,onChange}){
+const today=todayKey();
+const[showLog,setShowLog]=useState(null);
+const FLOW=[{val:“spot”,label:“Spotting”,color:”#f9c8d8”,dot:”#e8a0b8”},{val:“light”,label:“Lett”,color:”#f0a0c0”,dot:”#d87898”},{val:“medium”,label:“Middels”,color:”#d86090”,dot:”#b83870”},{val:“heavy”,label:“Kraftig”,color:”#a03060”,dot:”#801840”}];
+const SYM=[“Kramper”,“Hodepine”,“Tretthet”,“Oppblåst”,“Humørsvingninger”,“Ryggsmerter”];
+const getFC=flow=>(FLOW.find(f=>f.val===flow)||{}).dot||“transparent”;
+const days=Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()-(6-i));return d.toISOString().slice(0,10);});
+return(<div>
+<div style={{display:“flex”,gap:3,marginBottom:10}}>
+{days.map(key=>{const d=data[key]||{},isT=key===today;return(
+<div key={key} onClick={()=>setShowLog(showLog===key?null:key)} style={{flex:1,textAlign:“center”,cursor:“pointer”,padding:“5px 2px”,borderRadius:7,background:isT?C.berryLight:”#fdf8f5”,border:“1.5px solid “+(isT?C.berry:C.border),transition:“all 0.2s”}}>
+<div style={{fontSize:9,color:C.muted,textTransform:“uppercase”,letterSpacing:0.5}}>{DAY_NO[new Date(key+“T12:00:00”).getDay()].slice(0,2)}</div>
+<div style={{fontSize:11,fontWeight:500,color:isT?C.berry:C.warm,margin:“2px 0”}}>{parseInt(key.split(”-”)[2])}</div>
+<div style={{width:9,height:9,borderRadius:“50%”,background:d.flow?getFC(d.flow):“transparent”,border:d.flow?“none”:“1px dashed “+C.blush,margin:“0 auto”}}/>
+</div>
+);})}
+</div>
+{showLog&&<div style={{background:C.berryLight,borderRadius:12,padding:12,border:“1px solid “+C.blush,marginBottom:8}}>
+<div style={{fontSize:11,color:C.berry,fontWeight:500,marginBottom:8}}>{showLog===today?“I dag”:new Date(showLog+“T12:00:00”).toLocaleDateString(“no-NO”,{weekday:“long”,day:“numeric”,month:“long”})}</div>
+<div style={{fontSize:10,color:C.muted,textTransform:“uppercase”,letterSpacing:0.8,marginBottom:5}}>Blødning</div>
+<div style={{display:“flex”,gap:4,marginBottom:10,flexWrap:“wrap”}}>
+{FLOW.map(f=>{const sel=(data[showLog]||{}).flow===f.val;return(<div key={f.val} onClick={()=>{const cur=data[showLog]||{};onChange({…data,[showLog]:{…cur,flow:cur.flow===f.val?null:f.val}});}} style={{padding:“3px 9px”,borderRadius:20,cursor:“pointer”,fontSize:11,background:sel?f.color:”#fff”,border:“1.5px solid “+(sel?f.dot:C.border),color:sel?”#fff”:C.warm,transition:“all 0.2s”}}>{f.label}</div>);})}
+</div>
+<div style={{fontSize:10,color:C.muted,textTransform:“uppercase”,letterSpacing:0.8,marginBottom:5}}>Symptomer</div>
+<div style={{display:“flex”,flexWrap:“wrap”,gap:4}}>
+{SYM.map(s=>{const sel=((data[showLog]||{}).symptoms||[]).includes(s);return(<div key={s} onClick={()=>{const cur=(data[showLog]||{}).symptoms||[];const next=sel?cur.filter(x=>x!==s):[…cur,s];onChange({…data,[showLog]:{…(data[showLog]||{}),symptoms:next}});}} style={{padding:“3px 9px”,borderRadius:20,cursor:“pointer”,fontSize:11,background:sel?C.berry:”#fff”,border:“1.5px solid “+(sel?C.berry:C.border),color:sel?”#fff”:C.warm,transition:“all 0.2s”}}>{s}</div>);})}
+</div>
+</div>}
+<div style={{fontSize:10,color:C.muted,textAlign:“center”}}>Trykk på en dag for å logge</div>
+
+  </div>);
+}
+
+// ── Quick notes ─────────────────────────────────────────────────────────────
+function QuickNotes({notes,onChange}){
+const[text,setText]=useState(””);
+const add=()=>{if(!text.trim())return;onChange([{id:Date.now(),text:text.trim(),ts:new Date().toLocaleString(“no-NO”)},…notes]);setText(””);};
+const del=id=>onChange(notes.filter(n=>n.id!==id));
+return(<div style={{display:“flex”,flexDirection:“column”,gap:6}}>
+<div style={{display:“flex”,gap:5}}>
+<input value={text} onChange={e=>setText(e.target.value)} onKeyDown={e=>e.key===“Enter”&&add()} placeholder=“Skriv en notis…” style={{flex:1,padding:“7px 12px”,borderRadius:20,border:“1.5px solid “+C.border,fontSize:12,background:C.cream,outline:“none”,color:C.charcoal}}/>
+<button onClick={add} style={{width:30,height:30,borderRadius:“50%”,background:C.roseDark,color:”#fff”,border:“none”,cursor:“pointer”,fontSize:16,lineHeight:1,flexShrink:0}}>+</button>
+</div>
+<div style={{maxHeight:140,overflowY:“auto”,display:“flex”,flexDirection:“column”,gap:4}}>
+{notes.map(n=><div key={n.id} style={{padding:“6px 10px”,background:”#fffbf5”,borderRadius:9,border:“1px solid #f5e5c0”,display:“flex”,justifyContent:“space-between”,gap:6}}>
+<span style={{fontSize:12,color:C.charcoal,flex:1}}>{n.text}</span>
+<button onClick={()=>del(n.id)} style={{background:“none”,border:“none”,cursor:“pointer”,color:C.blush,fontSize:14,padding:0,flexShrink:0}}>×</button>
+</div>)}
+{notes.length===0&&<div style={{fontSize:11,color:C.blush,textAlign:“center”,padding:“6px 0”}}>Ingen notiser</div>}
+</div>
+
+  </div>);
+}
+
+// ── Today schedule ──────────────────────────────────────────────────────────
+function TodaySchedule({events}){
+const today=todayKey(),todayEvs=events.filter(e=>e.date===today&&e.time).sort((a,b)=>a.time.localeCompare(b.time));
+const now=new Date(),nowM=now.getHours()*60+now.getMinutes();
+const TAG={personal:C.rose,study:”#d4a060”,health:C.sage};
+if(!todayEvs.length)return<div style={{fontSize:11,color:C.blush,textAlign:“center”,padding:“12px 0”}}>Ingen hendelser i dag</div>;
+return(<div style={{display:“flex”,flexDirection:“column”,gap:4}}>
+{todayEvs.map(ev=>{const[h,m]=ev.time.split(”:”).map(Number),evM=h*60+m,past=evM<nowM,cur=evM>=nowM&&evM<nowM+60;return(
+<div key={ev.id} style={{display:“flex”,alignItems:“center”,gap:6,padding:“5px 8px”,borderRadius:8,background:cur?”#fff5f0”:C.cream,border:“1px solid “+(cur?C.rose:C.border),opacity:past?0.55:1}}>
+<div style={{minWidth:30,fontSize:10,fontWeight:500,color:C.warm}}>{ev.time}</div>
+<div style={{width:5,height:5,borderRadius:“50%”,background:TAG[ev.tag]||C.rose,flexShrink:0}}/>
+<span style={{fontSize:11,color:C.charcoal,flex:1}}>{ev.title}</span>
+{ev.important&&<span style={{fontSize:10}}>⚠️</span>}
+{cur&&<span style={{fontSize:8,background:C.blush,color:C.berry,padding:“1px 4px”,borderRadius:4,fontWeight:600}}>NÅ</span>}
+</div>
+);})}
+
+  </div>);
+}
+
+// ── Alert panel ─────────────────────────────────────────────────────────────
+function AlertPanel({events,supplements,water}){
+const today=todayKey(),d=new Date(),day=d.getDay(),alerts=[];
+const sl=supplements[today]||{};
+if(!sl.pcos_m&&d.getHours()>=7)alerts.push({msg:“Ta PCOS-pulver (morgen)”,urgent:true});
+if(!sl.pcos_d&&d.getHours()>=12)alerts.push({msg:“Ta PCOS-pulver (middag)”,urgent:true});
+if((day===3||day===6)&&!sl.nellik)alerts.push({msg:“Nellik-dag”,urgent:d.getHours()>=10});
+if((sl.tran||0)<3&&d.getHours()>=18)alerts.push({msg:“Tran: “+(3-(sl.tran||0))+” igjen”,urgent:false});
+const g=water[today]||0;if(g<7&&d.getHours()>=18)alerts.push({msg:(7-g)+” glass vann igjen”,urgent:true});
+for(let i=0;i<=7;i++){const dd=new Date(d);dd.setDate(d.getDate()+i);const k=dd.toISOString().slice(0,10);events.filter(e=>e.date===k).forEach(ev=>{const lbl=i===0?“i dag”:i===1?“i morgen”:DAY_NO[dd.getDay()].toLowerCase()+” “+dd.getDate()+”.”;alerts.push({msg:(ev.important?“⚠️ “:””)+ev.title+” — “+lbl+(ev.time?” kl.”+ev.time:””),urgent:i===0||ev.important});});}
+if(!alerts.length)return<div style={{fontSize:11,color:C.blush,textAlign:“center”,padding:“8px 0”}}>Alt ser bra ut ✨</div>;
+return(<div style={{display:“flex”,flexDirection:“column”,gap:4}}>
+{alerts.slice(0,7).map((a,i)=><div key={i} style={{padding:“4px 9px”,borderRadius:7,fontSize:11,background:a.urgent?”#fff5f0”:C.cream,border:“1px solid “+(a.urgent?C.blush:C.border),color:a.urgent?C.berry:C.warm}}>{a.urgent?”· “:“○ “}{a.msg}</div>)}
+
+  </div>);
+}
+
+// ── Todo list ───────────────────────────────────────────────────────────────
+// frequency: none | daily | weekly | biweekly | weekly-wed-sat | custom (daysOfWeek array)
+function TodoList({todos,onChange,accent}){
+accent=accent||C.roseDark;
+const[newText,setNewText]=useState(””);
+const[newFreq,setNewFreq]=useState(“none”);
+const today=todayKey(),day=new Date().getDay();
+const isVisible=t=>{
+if(t.freq===“none”)return true;
+if(t.freq===“daily”)return true;
+if(t.freq===“weekly”)return true;
+if(t.freq===“biweekly”){const wk=getWeekNumber(new Date());return wk%2===(t.biweeklyStart||0)%2;}
+if(t.freq===“weekly-wed-sat”)return day===3||day===6;
+if(t.freq===“custom”&&t.days)return t.days.includes(day);
+return true;
+};
+const isDone=t=>(t.doneOn||[]).includes(today);
+const toggle=id=>onChange(todos.map(t=>{if(t.id!==id)return t;const done=t.doneOn||[];return isDone(t)?{…t,doneOn:done.filter(d=>d!==today)}:{…t,doneOn:[…done,today]};}));
+const del=id=>onChange(todos.filter(t=>t.id!==id));
+const add=()=>{if(!newText.trim())return;onChange([…todos,{id:Date.now(),text:newText.trim(),freq:newFreq,doneOn:[],biweeklyStart:getWeekNumber(new Date())}]);setNewText(””);setNewFreq(“none”);};
+const freqLabel=f=>({none:“Én gang”,daily:“Daglig”,weekly:“Ukentlig”,biweekly:“Annenhver dag”,custom:“Egne dager”,“weekly-wed-sat”:“Ons & lør”}[f]||f);
+return(<div style={{display:“flex”,flexDirection:“column”,gap:5}}>
+{todos.filter(isVisible).map(t=><div key={t.id} style={{display:“flex”,alignItems:“center”,gap:8,padding:“7px 10px”,borderRadius:10,background:isDone(t)?C.sageLight:C.cream,border:“1px solid “+(isDone(t)?C.sage:C.border),transition:“all 0.2s”}}>
+<div onClick={()=>toggle(t.id)} style={{width:17,height:17,borderRadius:“50%”,border:“2px solid “+(isDone(t)?C.sageDark:C.rose),background:isDone(t)?C.sageDark:“transparent”,cursor:“pointer”,display:“flex”,alignItems:“center”,justifyContent:“center”,flexShrink:0,transition:“all 0.2s”}}>{isDone(t)&&<span style={{color:“white”,fontSize:9}}>✓</span>}</div>
+<span style={{flex:1,fontSize:13,color:isDone(t)?C.muted:C.charcoal,textDecoration:isDone(t)?“line-through”:“none”}}>{t.text}</span>
+{t.freq!==“none”&&<span style={{fontSize:9,color:C.muted,background:C.parchment,padding:“1px 5px”,borderRadius:10}}>{freqLabel(t.freq)}</span>}
+<button onClick={()=>del(t.id)} style={{background:“none”,border:“none”,cursor:“pointer”,color:C.blush,fontSize:14,padding:0}}>×</button>
+</div>)}
+{!todos.filter(isVisible).length&&<div style={{fontSize:11,color:C.blush,textAlign:“center”,padding:“6px 0”}}>Ingen gjøremål</div>}
+<div style={{display:“flex”,gap:5,marginTop:4}}>
+<input value={newText} onChange={e=>setNewText(e.target.value)} onKeyDown={e=>e.key===“Enter”&&add()} placeholder=“Legg til…” style={{flex:1,padding:“6px 12px”,borderRadius:20,border:“1.5px solid “+C.border,fontSize:12,background:C.cream,outline:“none”,color:C.charcoal}}/>
+<select value={newFreq} onChange={e=>setNewFreq(e.target.value)} style={{padding:“6px 5px”,borderRadius:9,border:“1.5px solid “+C.border,fontSize:10,color:C.warm,background:C.cream}}>
+<option value="none">Én gang</option>
+<option value="daily">Daglig</option>
+<option value="weekly">Ukentlig</option>
+<option value="biweekly">Annenhver dag</option>
+<option value="weekly-wed-sat">Ons & lør</option>
+</select>
+<button onClick={add} style={{width:32,height:32,borderRadius:“50%”,background:accent,color:”#fff”,border:“none”,cursor:“pointer”,fontSize:17,lineHeight:1,flexShrink:0}}>+</button>
+</div>
+
+  </div>);
+}
+
+// ── Meals ───────────────────────────────────────────────────────────────────
+const FIXED_MEALS=[“Frokost”,“Lunsj”,“Middag”,“Mellommåltid”,“Kveldsmat”];
+const MEAL_EMOJIS={Frokost:“🌸”,Lunsj:“🫖”,Middag:“🍽️”,Mellommåltid:“🍎”,Kveldsmat:“🌙”};
+function MealTracker({data,onChange}){
+const today=todayKey(),meals=data[today]||{};
+const toggle=m=>onChange({…data,[today]:{…meals,[m]:!meals[m]}});
+return(<div>
+<div style={{display:“flex”,flexWrap:“wrap”,gap:6}}>
+{FIXED_MEALS.map(m=><div key={m} onClick={()=>toggle(m)} style={{padding:“6px 13px”,borderRadius:20,cursor:“pointer”,fontSize:12,background:meals[m]?C.parchment:C.cream,border:“1.5px solid “+(meals[m]?C.roseDark:C.border),color:meals[m]?C.roseDark:C.warm,transition:“all 0.2s”,display:“flex”,alignItems:“center”,gap:4}}>
+<span style={{fontSize:11}}>{MEAL_EMOJIS[m]}</span>
+{meals[m]&&<span style={{fontSize:9,color:C.sageDark}}>✓</span>}
+{m}
+</div>)}
+</div>
+
+  </div>);
+}
+
+// ── Training ─────────────────────────────────────────────────────────────────
+// Supports “push to next day” per week
+function TrainingPlan({data,onChange}){
+const today=todayKey(),d=new Date(),day=d.getDay();
+const strengthDays=data.strengthDays||[1,3,5];
+const overrides=data.overrides||{};// {weekKey:{oldDay:newDay}}
+const log=data.log||{};
+const todayDone=log[today]||{};
+const weekStart=new Date(d);weekStart.setDate(d.getDate()-((d.getDay()+6)%7));
+const weekKey=weekStart.toISOString().slice(0,10);
+const weekOverride=overrides[weekKey]||{};
+// effective days this week
+const effectiveDays=strengthDays.map(sd=>{const ov=weekOverride[sd];return ov!=null?ov:sd;});
+const isStrengthDay=effectiveDays.includes(day);
+const DS=[“Søn”,“Man”,“Tir”,“Ons”,“Tor”,“Fre”,“Lør”];
+const toggleWorkout=type=>onChange({…data,log:{…log,[today]:{…todayDone,[type]:!todayDone[type]}}});
+const pushDay=(origDay)=>{// push to next available day
+const cur=weekOverride[origDay]!=null?weekOverride[origDay]:origDay;
+const next=(cur%7)+1>6?0:cur+1;
+onChange({…data,overrides:{…overrides,[weekKey]:{…weekOverride,[origDay]:next}}});
+};
+return(<div>
+<div style={{fontSize:10,color:C.muted,textTransform:“uppercase”,letterSpacing:1,fontWeight:500,marginBottom:6}}>Styrkedager (denne uka)</div>
+<div style={{display:“flex”,gap:3,marginBottom:12}}>
+{DS.map((label,i)=>{const isOrig=strengthDays.includes(i),isEff=effectiveDays.includes(i),isToday=i===day;return(
+<div key={i} onClick={()=>{const cur=strengthDays.includes(i)?strengthDays.filter(d=>d!==i):[…strengthDays,i];onChange({…data,strengthDays:cur});}} style={{flex:1,height:28,borderRadius:7,display:“flex”,alignItems:“center”,justifyContent:“center”,cursor:“pointer”,fontSize:9,fontWeight:500,background:isEff?C.roseDark:isOrig?”#e8c0b0”:C.parchment,color:isEff?”#fff”:C.muted,border:isToday?“2px solid “+C.berry:“2px solid transparent”,transition:“all 0.2s”}}>{label}</div>
+);})}
+</div>
+<div style={{display:“flex”,gap:8}}>
+{isStrengthDay&&<div onClick={()=>toggleWorkout(“strength”)} style={{flex:1,padding:“10px 8px”,borderRadius:11,cursor:“pointer”,textAlign:“center”,background:todayDone.strength?C.sageLight:C.cream,border:“1.5px solid “+(todayDone.strength?C.sage:C.border),transition:“all 0.2s”}}>
+<div style={{fontSize:20,marginBottom:3}}>🏋️</div>
+<div style={{fontSize:12,fontWeight:500,color:todayDone.strength?C.sageDark:C.warm}}>Styrke</div>
+<div style={{fontSize:10,color:C.muted}}>{todayDone.strength?“✓ Ferdig”:“Ikke gjort”}</div>
+</div>}
+<div onClick={()=>toggleWorkout(“walk”)} style={{flex:1,padding:“10px 8px”,borderRadius:11,cursor:“pointer”,textAlign:“center”,background:todayDone.walk?C.sageLight:C.cream,border:“1.5px solid “+(todayDone.walk?C.sage:C.border),transition:“all 0.2s”}}>
+<div style={{fontSize:20,marginBottom:3}}>🚶‍♀️</div>
+<div style={{fontSize:12,fontWeight:500,color:todayDone.walk?C.sageDark:C.warm}}>10k skritt</div>
+<div style={{fontSize:10,color:C.muted}}>{todayDone.walk?“✓ Ferdig”:“Ikke gjort”}</div>
+</div>
+</div>
+{!isStrengthDay&&strengthDays.some(sd=>{const cur=weekOverride[sd]!=null?weekOverride[sd]:sd;return cur===day||strengthDays.includes(day);})&&
+<div style={{marginTop:8,display:“flex”,gap:4,flexWrap:“wrap”}}>
+{strengthDays.map(sd=>{const cur=weekOverride[sd]!=null?weekOverride[sd]:sd;return cur!==day?null:(
+<button key={sd} onClick={()=>pushDay(sd)} style={{padding:“4px 10px”,borderRadius:14,background:C.parchment,color:C.warm,border:“1px solid “+C.border,cursor:“pointer”,fontSize:11}}>Skyv {DS[sd]} til neste dag</button>
+);}).filter(Boolean)}
+</div>
+}
+{!isStrengthDay&&<div style={{marginTop:8,display:“flex”,gap:4,flexWrap:“wrap”}}>
+{strengthDays.filter(sd=>{const cur=weekOverride[sd]!=null?weekOverride[sd]:sd;return cur!==day&&!effectiveDays.includes(day);}).map(sd=>(
+<button key={sd} onClick={()=>pushDay(sd)} style={{padding:“4px 10px”,borderRadius:14,background:C.parchment,color:C.warm,border:“1px solid “+C.border,cursor:“pointer”,fontSize:11}}>Flytt {DS[sd]}-økt hit</button>
+))}
+</div>}
+
+  </div>);
+}
+
+// ── Steps ───────────────────────────────────────────────────────────────────
+function StepTracker({data,onChange}){
+const today=todayKey(),steps=data[today]||0,goal=10000,pct=Math.min(100,(steps/goal)*100);
+const[input,setInput]=useState(””);
+const save=()=>{const n=parseInt(input);if(!isNaN(n)){onChange({…data,[today]:n});setInput(””);}};
+return(<div>
+<div style={{display:“flex”,justifyContent:“space-between”,marginBottom:5}}>
+<span style={{fontSize:10,color:C.muted,textTransform:“uppercase”,letterSpacing:1,fontWeight:500}}>Skritt</span>
+<span style={{fontSize:11,fontWeight:500,color:C.warm}}>{steps.toLocaleString(“no”)} / 10 000</span>
+</div>
+<div style={{height:6,background:C.parchment,borderRadius:3,marginBottom:7,overflow:“hidden”}}>
+<div style={{width:pct+”%”,height:“100%”,background:pct>=100?C.sageDark:C.rose,borderRadius:3,transition:“width 0.4s”}}/>
+</div>
+<div style={{display:“flex”,gap:5}}>
+<input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key===“Enter”&&save()} placeholder=“Oppdater skritt…” style={{flex:1,padding:“6px 12px”,borderRadius:20,border:“1.5px solid “+C.border,fontSize:12,background:C.cream,outline:“none”}}/>
+<button onClick={save} style={{padding:“6px 12px”,borderRadius:20,background:C.charcoal,color:”#fff”,border:“none”,cursor:“pointer”,fontSize:12}}>Lagre</button>
+</div>
+
+  </div>);
+}
+
+// ── Cleaning rotation ────────────────────────────────────────────────────────
+function CleaningRotation({data,onChange}){
+const tasks=data.tasks||[“Bad”,“Kjøkken”,“Gulv”,“Andre oppgaver”];
+const week=getWeekNumber(new Date());
+const[editing,setEditing]=useState(false);
+const[editTasks,setEditTasks]=useState(tasks.join(”\n”));
+const[editStart,setEditStart]=useState(data.startWeek||0);
+const startWeek=data.startWeek||0;
+// startWeek is now 0-indexed offset
+const idx=((week-1+400-startWeek)%tasks.length+tasks.length)%tasks.length;
+const current=tasks[idx];
+const log=data.log||{},today=todayKey(),done=log[today]===current;
+const saveTasks=()=>{const t=editTasks.split(”\n”).map(s=>s.trim()).filter(Boolean);onChange({…data,tasks:t,startWeek:parseInt(editStart)||0});setEditing(false);};
+return(<div>
+<div style={{display:“flex”,justifyContent:“space-between”,marginBottom:6}}>
+<span style={{fontSize:10,color:C.muted,textTransform:“uppercase”,letterSpacing:1,fontWeight:500}}>Uke {week}</span>
+<button onClick={()=>setEditing(!editing)} style={{fontSize:11,color:C.roseDark,background:“none”,border:“none”,cursor:“pointer”}}>Endre</button>
+</div>
+{!editing?<div>
+<div onClick={()=>onChange({…data,log:{…log,[today]:done?null:current}})} style={{padding:“9px 12px”,borderRadius:11,cursor:“pointer”,display:“flex”,alignItems:“center”,gap:9,background:done?C.sageLight:C.parchment,border:“1.5px solid “+(done?C.sage:C.border),transition:“all 0.2s”}}>
+<span style={{fontSize:18}}>🧹</span>
+<div>
+<div style={{fontSize:13,fontWeight:500,color:done?C.sageDark:C.charcoal}}>Denne uka: {current}</div>
+<div style={{fontSize:10,color:C.muted}}>{done?“✓ Ferdig”:“Trykk for å markere”}</div>
+</div>
+</div>
+<div style={{display:“flex”,gap:3,marginTop:6}}>
+{tasks.map((t,i)=><div key={i} style={{flex:1,padding:“3px 1px”,textAlign:“center”,borderRadius:5,fontSize:9,background:i===idx?C.roseDark:C.parchment,color:i===idx?”#fff”:C.muted}}>{t.split(” “)[0]}</div>)}
+</div>
+</div>:<div>
+<div style={{fontSize:11,color:C.muted,marginBottom:4}}>Én oppgave per linje:</div>
+<textarea value={editTasks} onChange={e=>setEditTasks(e.target.value)} rows={5} style={{width:“100%”,padding:“8px 10px”,borderRadius:9,border:“1.5px solid “+C.border,fontSize:12,resize:“vertical”,outline:“none”,boxSizing:“border-box”,background:C.cream}}/>
+<div style={{display:“flex”,gap:6,alignItems:“center”,marginTop:6,marginBottom:6}}>
+<span style={{fontSize:11,color:C.muted}}>Startuke (offset 0–N):</span>
+<input type=“number” min={0} value={editStart} onChange={e=>setEditStart(e.target.value)} style={{width:50,padding:“4px 6px”,borderRadius:7,border:“1.5px solid “+C.border,fontSize:12,outline:“none”,background:C.cream}}/>
+</div>
+<div style={{display:“flex”,gap:5}}>
+<button onClick={saveTasks} style={{flex:1,padding:“6px”,borderRadius:9,background:C.charcoal,color:”#fff”,border:“none”,cursor:“pointer”,fontSize:12}}>Lagre</button>
+<button onClick={()=>setEditing(false)} style={{flex:1,padding:“6px”,borderRadius:9,background:C.parchment,color:C.warm,border:“none”,cursor:“pointer”,fontSize:12}}>Avbryt</button>
+</div>
+</div>}
+
+  </div>);
+}
+
+// ── Study timer ──────────────────────────────────────────────────────────────
+function StudyTimer({data,onChange}){
+const[running,setRunning]=useState(false);
+const[elapsed,setElapsed]=useState(0);
+const[startTs,setStartTs]=useState(null);
+const timerRef=useRef(null);
+const today=todayKey();
+const sessions=data[today]||[];
+const totalToday=sessions.reduce((s,x)=>s+x.dur,0);
+const fmt=s=>{const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;return h>0?h+“t “+pad(m)+“m”:m>0?pad(m)+“m “+pad(sec)+“s”:pad(sec)+“s”;};
+useEffect(()=>{if(running){timerRef.current=setInterval(()=>setElapsed(e=>e+1),1000);}else{clearInterval(timerRef.current);}return()=>clearInterval(timerRef.current);},[running]);
+const start=()=>{setStartTs(Date.now());setRunning(true);};
+const pause=()=>setRunning(false);
+const resume=()=>setRunning(true);
+const stop=()=>{setRunning(false);if(elapsed>0){const newSessions=[…sessions,{id:Date.now(),dur:elapsed,ts:new Date().toLocaleTimeString(“no-NO”)}];onChange({…data,[today]:newSessions});}setElapsed(0);setStartTs(null);};
+const weekDays=Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()-i);return d.toISOString().slice(0,10);}).reverse();
+const maxDur=Math.max(…weekDays.map(k=>(data[k]||[]).reduce((s,x)=>s+x.dur,0)),1);
+return(<div>
+<div style={{textAlign:“center”,marginBottom:14}}>
+<div style={{fontFamily:”‘Cormorant Garamond’,serif”,fontSize:42,fontWeight:300,color:running?C.berry:C.charcoal,letterSpacing:-1}}>{fmt(elapsed)}</div>
+<div style={{display:“flex”,gap:8,justifyContent:“center”,marginTop:8}}>
+{!startTs&&!elapsed&&<button onClick={start} style={{padding:“7px 20px”,borderRadius:20,background:C.charcoal,color:”#fff”,border:“none”,cursor:“pointer”,fontSize:13}}>Start</button>}
+{startTs&&running&&<button onClick={pause} style={{padding:“7px 20px”,borderRadius:20,background:C.parchment,color:C.warm,border:“1px solid “+C.border,cursor:“pointer”,fontSize:13}}>Pause</button>}
+{startTs&&!running&&elapsed>0&&<button onClick={resume} style={{padding:“7px 20px”,borderRadius:20,background:C.charcoal,color:”#fff”,border:“none”,cursor:“pointer”,fontSize:13}}>Fortsett</button>}
+{elapsed>0&&<button onClick={stop} style={{padding:“7px 20px”,borderRadius:20,background:C.roseDark,color:”#fff”,border:“none”,cursor:“pointer”,fontSize:13}}>Stopp & logg</button>}
+</div>
+<div style={{fontSize:12,color:C.muted,marginTop:6}}>I dag: {fmt(totalToday)}</div>
+</div>
+<div style={{fontSize:10,color:C.muted,textTransform:“uppercase”,letterSpacing:1,fontWeight:500,marginBottom:6}}>Siste 7 dager</div>
+<div style={{display:“flex”,gap:3,alignItems:“flex-end”,height:40}}>
+{weekDays.map(k=>{const dur=(data[k]||[]).reduce((s,x)=>s+x.dur,0),h=dur>0?Math.max(8,Math.round((dur/maxDur)*36)):4,isT=k===today;return(
+<div key={k} style={{flex:1,display:“flex”,flexDirection:“column”,alignItems:“center”,gap:2}}>
+<div style={{width:“100%”,height:h,background:isT?C.berry:dur>0?C.rose:C.parchment,borderRadius:“3px 3px 0 0”,transition:“height 0.4s”}}/>
+<div style={{fontSize:8,color:C.muted,textTransform:“uppercase”}}>{DAY_NO[new Date(k+“T12:00:00”).getDay()].slice(0,2)}</div>
+</div>
+);})}
+</div>
+{sessions.length>0&&<div style={{marginTop:10}}>
+<div style={{fontSize:10,color:C.muted,textTransform:“uppercase”,letterSpacing:1,fontWeight:500,marginBottom:4}}>Dagens økter</div>
+{sessions.map(s=><div key={s.id} style={{fontSize:11,color:C.warm,padding:“2px 0”}}>{s.ts} — {fmt(s.dur)}</div>)}
+</div>}
+
+  </div>);
+}
+
+// ── Important messages ────────────────────────────────────────────────────────
+function ImportantMessages({events,onEvents}){
+const eventsMsgs=events.filter(e=>e.important&&e.importantMsg&&e.date>=todayKey()).sort((a,b)=>a.date.localeCompare(b.date));
+return(<div>
+{!eventsMsgs.length&&<div style={{fontSize:12,color:C.muted,textAlign:“center”,padding:“10px 0”,fontStyle:“italic”}}>Ingen viktige beskjeder. Legg til i Kalender ved å merke hendelsen som Viktig.</div>}
+{eventsMsgs.map(ev=><div key={ev.id} style={{padding:“8px 12px”,borderRadius:10,background:”#fff8f0”,border:“1px solid #f5d0a0”,marginBottom:6}}>
+<div style={{display:“flex”,gap:6,alignItems:“center”,marginBottom:3}}>
+<span>⚠️</span>
+<span style={{fontSize:12,fontWeight:500,color:C.charcoal}}>{ev.title}</span>
+<span style={{fontSize:10,color:C.muted,marginLeft:“auto”}}>{ev.date}{ev.time?” kl.”+ev.time:””}</span>
+</div>
+<div style={{fontSize:12,color:C.warm}}>{ev.importantMsg}</div>
+</div>)}
+
+  </div>);
+}
+
+// ── Calendar (week table + important) ────────────────────────────────────────
+function CalendarFull({events,onEvents}){
+const[current,setCurrent]=useState(new Date());
+const[view,setView]=useState(“month”);
+const[showAdd,setShowAdd]=useState(null);
+const[form,setForm]=useState({title:””,time:””,endTime:””,note:””,tag:“personal”,important:false,importantMsg:””});
+const year=current.getFullYear(),month=current.getMonth();
+const firstDay=new Date(year,month,1).getDay(),dim=new Date(year,month+1,0).getDate();
+const today=new Date();
+const TAG={personal:C.rose,study:”#d4a060”,health:C.sage};
+const addEvent=()=>{if(!form.title.trim()||!showAdd)return;onEvents([…events,{id:Date.now(),date:showAdd,…form}]);setForm({title:””,time:””,endTime:””,note:””,tag:“personal”,important:false,importantMsg:””});setShowAdd(null);};
+const delEvent=id=>onEvents(events.filter(e=>e.id!==id));
+const dKey=(d)=>year+”-”+pad(month+1)+”-”+pad(d);
+const cells=[];
+for(let i=0;i<(firstDay===0?6:firstDay-1);i++)cells.push(null);
+for(let d=1;d<=dim;d++)cells.push(d);
+// Week view — table
+const monday=new Date(current);monday.setDate(current.getDate()-((current.getDay()+6)%7));
+const weekDays=Array.from({length:7},(*,i)=>{const d=new Date(monday);d.setDate(monday.getDate()+i);return d;});
+const HOURS=Array.from({length:16},(*,i)=>i+7);// 7-22
+return(<div>
+<div style={{display:“flex”,justifyContent:“space-between”,alignItems:“center”,marginBottom:12}}>
+<div style={{display:“flex”,gap:5}}>
+{[“month”,“week”].map(v=><button key={v} onClick={()=>setView(v)} style={{padding:“3px 12px”,borderRadius:20,border:“none”,cursor:“pointer”,fontSize:11,background:view===v?C.charcoal:C.parchment,color:view===v?”#fff”:C.warm}}>{v===“month”?“Måned”:“Uke”}</button>)}
+</div>
+<div style={{display:“flex”,alignItems:“center”,gap:8}}>
+<button onClick={()=>{const d=new Date(current);d.setDate(d.getDate()-(view===“week”?7:30));setCurrent(d);}} style={{background:“none”,border:“none”,cursor:“pointer”,fontSize:18,color:C.muted}}>‹</button>
+<span style={{fontSize:13,fontFamily:”‘Cormorant Garamond’,serif”,minWidth:140,textAlign:“center”,color:C.charcoal}}>{view===“month”?MON_NO[month]+” “+year:“Uke “+getWeekNumber(monday)}</span>
+<button onClick={()=>{const d=new Date(current);d.setDate(d.getDate()+(view===“week”?7:30));setCurrent(d);}} style={{background:“none”,border:“none”,cursor:“pointer”,fontSize:18,color:C.muted}}>›</button>
+</div>
+</div>
+
+```
+{view==="month"&&<div>
+  <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",marginBottom:3}}>
+    {["Ma","Ti","On","To","Fr","Lø","Sø"].map(d=><div key={d} style={{textAlign:"center",fontSize:10,color:C.muted,padding:"3px 0",fontWeight:500,letterSpacing:0.5}}>{d}</div>)}
+  </div>
+  <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:2}}>
+    {cells.map((d,i)=>{
+      if(!d)return<div key={i}/>;
+      const key=dKey(d),dayEvs=events.filter(e=>e.date===key);
+      const isT=today.getDate()===d&&today.getMonth()===month&&today.getFullYear()===year;
+      return(<div key={i} onClick={()=>setShowAdd(key)} style={{minHeight:42,padding:"3px",borderRadius:7,cursor:"pointer",background:isT?C.charcoal:showAdd===key?C.berryLight:C.cream,border:"1px solid "+(isT?C.charcoal:showAdd===key?C.mauve:C.border),transition:"all 0.15s"}}>
+        <div style={{fontSize:11,color:isT?"#fff":C.warm,fontWeight:isT?500:400,marginBottom:1}}>{d}</div>
+        {dayEvs.slice(0,2).map(ev=><div key={ev.id} style={{fontSize:7,background:ev.important?"#f5a030":TAG[ev.tag]||C.rose,color:"#fff",borderRadius:3,padding:"1px 2px",marginBottom:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{ev.important?"⚠️ ":""}{ev.title}</div>)}
+        {dayEvs.length>2&&<div style={{fontSize:7,color:C.muted}}>+{dayEvs.length-2}</div>}
+      </div>);
+    })}
+  </div>
+</div>}
+
+{view==="week"&&<div style={{overflowX:"auto"}}>
+  {/* Week header */}
+  <div style={{display:"grid",gridTemplateColumns:"40px repeat(7,1fr)",gap:1,marginBottom:2}}>
+    <div/>
+    {weekDays.map((d,i)=>{const isT=d.toISOString().slice(0,10)===today.toISOString().slice(0,10);return(
+      <div key={i} style={{textAlign:"center",padding:"4px 2px",borderRadius:6,background:isT?C.charcoal:"transparent",cursor:"pointer"}} onClick={()=>setShowAdd(d.toISOString().slice(0,10))}>
+        <div style={{fontSize:9,color:isT?"rgba(255,255,255,0.7)":C.muted,textTransform:"uppercase",letterSpacing:0.5}}>{DAY_NO[d.getDay()].slice(0,2)}</div>
+        <div style={{fontSize:14,fontFamily:"'Cormorant Garamond',serif",color:isT?"#fff":C.warm,lineHeight:1.1}}>{d.getDate()}</div>
+      </div>
+    );})}
+  </div>
+  {/* Important/all-day events row */}
+  {weekDays.some(d=>events.some(e=>e.date===d.toISOString().slice(0,10)&&e.important))&&
+    <div style={{display:"grid",gridTemplateColumns:"40px repeat(7,1fr)",gap:1,marginBottom:4}}>
+      <div style={{fontSize:8,color:C.muted,paddingTop:2,textAlign:"right",paddingRight:4}}>⚠️</div>
+      {weekDays.map((d,i)=>{const k=d.toISOString().slice(0,10);const imp=events.filter(e=>e.date===k&&e.important);return(
+        <div key={i} style={{minHeight:16}}>
+          {imp.map(ev=><div key={ev.id} style={{fontSize:9,background:"#f5a030",color:"#fff",borderRadius:3,padding:"1px 4px",marginBottom:1,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>⚠️ {ev.title}</div>)}
         </div>
-      );
-    }
+      );})}
+    </div>
+  }
+  {/* Time grid */}
+  <div style={{overflowY:"auto",maxHeight:420}}>
+    {HOURS.map(h=><div key={h} style={{display:"grid",gridTemplateColumns:"40px repeat(7,1fr)",gap:1,minHeight:36,borderTop:"1px solid "+C.parchment}}>
+      <div style={{fontSize:9,color:C.muted,paddingTop:2,textAlign:"right",paddingRight:4}}>{pad(h)}:00</div>
+      {weekDays.map((d,i)=>{const k=d.toISOString().slice(0,10);const evs=events.filter(e=>e.date===k&&e.time&&parseInt(e.time.split(":")[0])===h&&!e.important);return(
+        <div key={i} style={{padding:"1px",minHeight:34,background:"transparent",position:"relative"}}>
+          {evs.map(ev=><div key={ev.id} style={{fontSize:9,background:TAG[ev.tag]||C.rose,color:"#fff",borderRadius:3,padding:"2px 4px",marginBottom:1,lineHeight:1.3}}>
+            {ev.time}{ev.endTime?"-"+ev.endTime:""} {ev.title}
+          </div>)}
+        </div>
+      );})}
+    </div>)}
+  </div>
+  <div style={{marginTop:8,fontSize:11,color:C.muted,textAlign:"center"}}>Trykk på en dag for å legge til hendelse</div>
+</div>}
 
-    function WaterDrop({ filled, onClick }) {
-      const id = filled ? "dropFilled" : "dropEmpty";
-      return (
-        <svg onClick={onClick} width="28" height="34" viewBox="0 0 28 34"
-          style={{ cursor: "pointer", transition: "transform 0.15s", flexShrink: 0 }}
-          onMouseEnter={e => e.currentTarget.style.transform = "scale(1.12)"}
-          onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}>
-          <defs>
-            <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={filled ? "#7ec8e3" : "#edddd0"} />
-              <stop offset="100%" stopColor={filled ? "#4a9fc4" : "#d9c4b5"} />
-            </linearGradient>
-          </defs>
-          <path d="M14 2 C14 2 4 14 4 21 a10 10 0 0 0 20 0 C24 14 14 2 14 2Z"
-            fill={"url(#" + id + ")"} stroke={filled ? "#4a9fc4" : "#d9c4b5"} strokeWidth="0.5" />
-          {filled && <ellipse cx="10" cy="19" rx="2.5" ry="4" fill="rgba(255,255,255,0.25)" />}
-        </svg>
-      );
-    }
+{showAdd&&<div style={{marginTop:12,padding:14,borderRadius:13,background:C.parchment,border:"1.5px solid "+C.border}}>
+  <div style={{fontSize:12,color:C.muted,marginBottom:8}}>Ny hendelse — {showAdd}</div>
+  <div style={{display:"flex",flexDirection:"column",gap:7}}>
+    <input value={form.title} onChange={e=>setForm({...form,title:e.target.value})} placeholder="Tittel" style={{padding:"7px 11px",borderRadius:9,border:"1.5px solid "+C.border,fontSize:13,background:C.cream,outline:"none",color:C.charcoal}}/>
+    <div style={{display:"flex",gap:5}}>
+      <div style={{flex:1}}>
+        <div style={{fontSize:10,color:C.muted,marginBottom:3}}>Start</div>
+        <input value={form.time} onChange={e=>setForm({...form,time:e.target.value})} type="time" style={{width:"100%",padding:"7px 8px",borderRadius:9,border:"1.5px solid "+C.border,fontSize:13,background:C.cream}}/>
+      </div>
+      <div style={{flex:1}}>
+        <div style={{fontSize:10,color:C.muted,marginBottom:3}}>Slutt</div>
+        <input value={form.endTime} onChange={e=>setForm({...form,endTime:e.target.value})} type="time" style={{width:"100%",padding:"7px 8px",borderRadius:9,border:"1.5px solid "+C.border,fontSize:13,background:C.cream}}/>
+      </div>
+      <div style={{flex:1}}>
+        <div style={{fontSize:10,color:C.muted,marginBottom:3}}>Type</div>
+        <select value={form.tag} onChange={e=>setForm({...form,tag:e.target.value})} style={{width:"100%",padding:"7px 6px",borderRadius:9,border:"1.5px solid "+C.border,fontSize:12,background:C.cream,color:C.warm}}>
+          <option value="personal">Personlig</option>
+          <option value="study">Studie</option>
+          <option value="health">Helse</option>
+        </select>
+      </div>
+    </div>
+    <input value={form.note} onChange={e=>setForm({...form,note:e.target.value})} placeholder="Notat (valgfritt)" style={{padding:"7px 11px",borderRadius:9,border:"1.5px solid "+C.border,fontSize:13,background:C.cream,outline:"none"}}/>
+    <label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",fontSize:12,color:C.warm}}>
+      <input type="checkbox" checked={form.important} onChange={e=>setForm({...form,important:e.target.checked})} style={{width:14,height:14}}/>
+      ⚠️ Viktig hendelse (vises uthevet i ukeoversikten)
+    </label>
+    {form.important&&<input value={form.importantMsg} onChange={e=>setForm({...form,importantMsg:e.target.value})} placeholder="Viktig beskjed (f.eks. Husk kalkulator)" style={{padding:"7px 11px",borderRadius:9,border:"1.5px solid #f5d0a0",fontSize:13,background:"#fff8f0",outline:"none"}}/>}
+    <div style={{display:"flex",gap:5}}>
+      <button onClick={addEvent} style={{flex:1,padding:"7px",borderRadius:20,background:C.charcoal,color:"#fff",border:"none",cursor:"pointer",fontSize:13}}>Legg til</button>
+      <button onClick={()=>setShowAdd(null)} style={{flex:1,padding:"7px",borderRadius:20,background:C.parchment,color:C.warm,border:"1px solid "+C.border,cursor:"pointer",fontSize:13}}>Avbryt</button>
+    </div>
+  </div>
+  {events.filter(e=>e.date===showAdd).map(ev=><div key={ev.id} style={{display:"flex",alignItems:"center",gap:6,padding:"5px 0",fontSize:12,marginTop:6,borderTop:"1px solid "+C.parchment}}>
+    <div style={{width:6,height:6,borderRadius:"50%",background:ev.important?"#f5a030":TAG[ev.tag]||C.rose}}/>
+    {ev.time&&<span style={{color:C.muted,fontSize:11}}>{ev.time}{ev.endTime?"-"+ev.endTime:""}</span>}
+    <span style={{flex:1}}>{ev.important?"⚠️ ":""}{ev.title}</span>
+    <button onClick={()=>delEvent(ev.id)} style={{background:"none",border:"none",cursor:"pointer",color:C.blush,fontSize:14}}>×</button>
+  </div>)}
+</div>}
+```
 
-    function WaterMini({ data, onChange }) {
-      const glasses = data[todayKey()] || 0;
-      const goal = 7;
-      const add = () => onChange({ ...data, [todayKey()]: Math.min(goal + 2, glasses + 1) });
-      const rem = () => onChange({ ...data, [todayKey()]: Math.max(0, glasses - 1) });
-      return (
+  </div>);
+}
+
+// ── Card ─────────────────────────────────────────────────────────────────────
+function Card({title,emoji,children,s}){
+return(<div style={{background:C.cardBg,borderRadius:14,padding:“13px 15px”,border:“1px solid “+C.border,boxShadow:SH,…(s||{})}}>
+{title&&<div style={{fontFamily:”‘Cormorant Garamond’,serif”,fontSize:15,fontWeight:400,color:C.charcoal,marginBottom:10,paddingBottom:7,borderBottom:“1px solid “+C.parchment,display:“flex”,alignItems:“center”,gap:5}}>
+{emoji&&<span style={{fontSize:13}}>{emoji}</span>} {title}
+</div>}
+{children}
+
+  </div>);
+}
+
+// ── Nav ───────────────────────────────────────────────────────────────────────
+const PAGES=[{id:“home”,label:“Hjem”,icon:“⌂”},{id:“personal”,label:“Personlig”,icon:“♡”},{id:“study”,label:“Studie”,icon:“◈”},{id:“health”,label:“Helse”,icon:“◎”},{id:“calendar”,label:“Kalender”,icon:“▦”}];
+
+// ── APP ───────────────────────────────────────────────────────────────────────
+function App(){
+const[page,setPage]=useState(“home”);
+const[water,setWater]=useStore(“maia-water”,{});
+const[steps,setSteps]=useStore(“maia-steps”,{});
+const[notes,setNotes]=useStore(“maia-notes”,[]);
+const[pTodos,setPTodos]=useStore(“maia-ptodos”,[{id:1,text:“Dusje morgen”,freq:“daily”,doneOn:[]},{id:2,text:“Dusje kveld”,freq:“daily”,doneOn:[]}]);
+const[sTodos,setSTodos]=useStore(“maia-stodos”,[]);
+const[events,setEvents]=useStore(“maia-events”,[]);
+const[supplements,setSupplements]=useStore(“maia-supplements”,{});
+const[meals,setMeals]=useStore(“maia-meals”,{});
+const[training,setTraining]=useStore(“maia-training”,{strengthDays:[1,3,5],log:{},overrides:{}});
+const[cleaning,setCleaning]=useStore(“maia-cleaning”,{tasks:[“Bad”,“Kjøkken”,“Gulv”,“Andre oppgaver”],startWeek:0,log:{}});
+const[sleep,setSleep]=useStore(“maia-sleep”,{wakeHour:6,wakeMin:30});
+const[sleepLog,setSleepLog]=useStore(“maia-sleeplog”,{});
+const[menstrual,setMenstrual]=useStore(“maia-menstrual”,{});
+const[skincare,setSkincare]=useStore(“maia-skincare”,{});
+const[studyTimer,setStudyTimer]=useStore(“maia-studytimer”,{});
+const[photo,setPhoto]=useStore(“maia-photo”,null);
+const[greeting,setGreeting]=useState(getGreeting());
+useEffect(()=>{const t=setInterval(()=>setGreeting(getGreeting()),60000);return()=>clearInterval(t);},[]);
+const d=new Date(),today=todayKey(),dayNum=d.getDay();
+const allTodos=[…pTodos,…sTodos].filter(t=>{
+if(t.freq===“none”)return!(t.doneOn||[]).includes(today);
+if(t.freq===“daily”)return true;
+if(t.freq===“weekly-wed-sat”)return dayNum===3||dayNum===6;
+if(t.freq===“biweekly”){const wk=getWeekNumber(new Date());return wk%2===(t.biweeklyStart||0)%2;}
+return true;
+});
+const toggleTodo=id=>{
+const inP=pTodos.find(x=>x.id===id);
+const update=(list,set)=>set(list.map(t=>{if(t.id!==id)return t;const done=(t.doneOn||[]).includes(today);return done?{…t,doneOn:t.doneOn.filter(x=>x!==today)}:{…t,doneOn:[…(t.doneOn||[]),today]};}));
+inP?update(pTodos,setPTodos):update(sTodos,setSTodos);
+};
+
+const P={padding:“14px 14px”,display:“flex”,flexDirection:“column”,gap:10};
+
+return(<div style={{fontFamily:”‘Jost’,sans-serif”,minHeight:“100vh”,background:C.cream,color:C.charcoal}}>
+{/* Nav */}
+<div style={{position:“fixed”,bottom:0,left:0,right:0,background:“rgba(253,248,243,0.97)”,backdropFilter:“blur(14px)”,WebkitBackdropFilter:“blur(14px)”,borderTop:“1px solid “+C.border,display:“flex”,justifyContent:“space-around”,padding:“8px 0 16px”,zIndex:200}}>
+{PAGES.map(n=><button key={n.id} onClick={()=>setPage(n.id)} style={{display:“flex”,flexDirection:“column”,alignItems:“center”,gap:3,background:“none”,border:“none”,cursor:“pointer”,padding:“4px 10px”}}>
+<div style={{width:34,height:24,borderRadius:9,display:“flex”,alignItems:“center”,justifyContent:“center”,background:page===n.id?C.charcoal:“transparent”,transition:“all 0.25s”}}>
+<span style={{fontSize:12,filter:page===n.id?“invert(1)”:“none”,opacity:page===n.id?1:0.35}}>{n.icon}</span>
+</div>
+<span style={{fontSize:9,color:page===n.id?C.charcoal:C.muted,fontWeight:page===n.id?600:400,letterSpacing:0.8,textTransform:“uppercase”}}>{n.label}</span>
+</button>)}
+</div>
+
+```
+<div style={{width:"100%",paddingBottom:90}}>
+
+  {/* ── HOME ── */}
+  {page==="home"&&<div>
+    <div className="monet-hero">
+      <Clock photo={photo} onPhoto={setPhoto}/>
+      <div style={{marginTop:14,fontFamily:"'Cormorant Garamond',serif",fontSize:28,fontWeight:300,color:"#fff",letterSpacing:0.3,position:"relative",zIndex:1,textShadow:"0 2px 8px rgba(0,0,0,0.2)"}}>
+        {greeting}, Maia
+      </div>
+      <div style={{fontSize:11,color:"rgba(255,255,255,0.6)",marginTop:2,letterSpacing:1.5,textTransform:"uppercase",fontWeight:300,position:"relative",zIndex:1}}>
+        Uke {getWeekNumber(d)} · {d.getDate()}. {MON_NO[d.getMonth()]}
+      </div>
+    </div>
+    <div style={P}>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+        <Card title="Varsler" emoji="🔔"><AlertPanel events={events} supplements={supplements} water={water}/></Card>
+        <Card title="Timeplan" emoji="📅"><TodaySchedule events={events}/></Card>
+      </div>
+      <Card title="Dagens gjøremål" emoji="✓">
+        <div style={{display:"flex",flexDirection:"column",gap:4}}>
+          {allTodos.slice(0,7).map(t=>{const done=(t.doneOn||[]).includes(today);return(
+            <div key={t.id} onClick={()=>toggleTodo(t.id)} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 9px",borderRadius:9,background:done?C.sageLight:C.cream,border:"1px solid "+(done?C.sage:C.border),cursor:"pointer",transition:"all 0.2s"}}>
+              <div style={{width:16,height:16,borderRadius:"50%",border:"2px solid "+(done?C.sageDark:C.rose),background:done?C.sageDark:"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all 0.2s"}}>{done&&<span style={{color:"white",fontSize:8}}>✓</span>}</div>
+              <span style={{fontSize:12,color:done?C.muted:C.charcoal,textDecoration:done?"line-through":"none",flex:1}}>{t.text}</span>
+            </div>
+          );})}
+          {!allTodos.length&&<div style={{fontSize:12,color:C.muted,textAlign:"center",padding:"8px 0",fontStyle:"italic"}}>Alt er gjort for i dag ✨</div>}
+        </div>
+      </Card>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,alignItems:"start"}}>
+        <Card title="Notiser" emoji="🖊"><QuickNotes notes={notes} onChange={setNotes}/></Card>
+        <div style={{display:"flex",flexDirection:"column",gap:10}}>
+          <Card><WaterMini data={water} onChange={setWater}/></Card>
+          <Card><SupplMini data={supplements} onChange={setSupplements}/></Card>
+        </div>
+      </div>
+    </div>
+  </div>}
+
+  {/* ── PERSONAL ── */}
+  {page==="personal"&&<div style={P}>
+    <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:28,fontWeight:300,padding:"12px 2px 4px"}}>Personlig</div>
+    <Card title="Daglige gjøremål" emoji="📋"><TodoList todos={pTodos} onChange={setPTodos} accent={C.roseDark}/></Card>
+    <Card title="Rengjøringsrotasjon" emoji="🧹"><CleaningRotation data={cleaning} onChange={setCleaning}/></Card>
+    <Card title="Måltider" emoji="🍽️"><MealTracker data={meals} onChange={setMeals}/></Card>
+    <Card title="Søvn & rutiner" emoji="🌙"><SleepLog data={sleepLog} onChange={setSleepLog} settings={sleep} onSettings={setSleep}/></Card>
+    {/* Sleep stats */}
+    {Object.keys(sleepLog).length>0&&<Card title="Søvnstatistikk" emoji="📊">
+      <div style={{display:"flex",gap:3}}>
+        {Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()-i);return d.toISOString().slice(0,10);}).reverse().map(k=>{const d=sleepLog[k]||{};return(
+          <div key={k} style={{flex:1,textAlign:"center",padding:"4px 2px",borderRadius:6,background:d.wokeAt?C.berryLight:C.parchment,border:"1px solid "+(k===today?C.berry:C.border)}}>
+            <div style={{fontSize:8,color:C.muted,textTransform:"uppercase"}}>{DAY_NO[new Date(k+"T12:00:00").getDay()].slice(0,2)}</div>
+            <div style={{fontSize:9,color:C.berry,fontWeight:500,marginTop:2}}>{d.wokeAt||"-"}</div>
+            <div style={{fontSize:8,color:C.muted}}>{d.sleptAt||""}</div>
+          </div>
+        );})}
+      </div>
+    </Card>}
+  </div>}
+
+  {/* ── STUDY ── */}
+  {page==="study"&&<div style={P}>
+    <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:28,fontWeight:300,padding:"12px 2px 4px"}}>Studie</div>
+    <Card title="Studietimer" emoji="⏱️"><StudyTimer data={studyTimer} onChange={setStudyTimer}/></Card>
+    <Card title="Gjøremål" emoji="📚"><TodoList todos={sTodos} onChange={setSTodos} accent="#c4a060"/></Card>
+    <Card title="Viktige beskjeder" emoji="⚠️"><ImportantMessages events={events} onEvents={setEvents}/></Card>
+    <Card title="Viktige datoer" emoji="📌">
+      {!events.filter(e=>e.tag==="study"&&e.date>=todayKey()).length?<div style={{fontSize:12,color:C.muted,textAlign:"center",padding:"10px 0",fontStyle:"italic"}}>Ingen studiehendelser. Legg til via Kalender.</div>
+      :events.filter(e=>e.tag==="study"&&e.date>=todayKey()).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,10).map(ev=><div key={ev.id} style={{display:"flex",gap:12,padding:"8px 0",borderBottom:"1px solid "+C.parchment,alignItems:"flex-start"}}>
+        <div style={{textAlign:"center",minWidth:36,background:C.parchment,borderRadius:7,padding:"3px 0"}}>
+          <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:18,color:C.charcoal,lineHeight:1}}>{parseInt(ev.date.split("-")[2])}</div>
+          <div style={{fontSize:8,color:C.muted,textTransform:"uppercase"}}>{MON_S[parseInt(ev.date.split("-")[1])-1]}</div>
+        </div>
         <div>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-            <span style={{ fontSize: 10, color: C.muted, textTransform: "uppercase", letterSpacing: 1.2, fontFamily: "'Jost'", fontWeight: 500 }}>Vann</span>
-            <span style={{ fontSize: 11, color: C.warm, fontFamily: "'Jost'" }}>{glasses * 300}ml / 2100ml</span>
-          </div>
-          <div style={{ display: "flex", gap: 4, flexWrap: "wrap", justifyContent: "center" }}>
-            {Array.from({ length: goal }).map((_, i) => (
-              <WaterDrop key={i} filled={i < glasses} onClick={i < glasses ? rem : add} />
-            ))}
-          </div>
-          <div style={{ fontSize: 9, color: glasses >= goal ? C.sageDark : C.muted, textAlign: "center", marginTop: 6, letterSpacing: 0.5, fontFamily: "'Jost'" }}>
-            {glasses >= goal ? "✓ Dagsmål nådd" : (goal - glasses) + " glass igjen"}
-          </div>
+          <div style={{fontSize:13,color:ev.important?"#c07000":C.charcoal}}>{ev.important?"⚠️ ":""}{ev.title}</div>
+          {ev.time&&<div style={{fontSize:11,color:C.muted}}>kl. {ev.time}{ev.endTime?" – "+ev.endTime:""}</div>}
+          {ev.importantMsg&&<div style={{fontSize:11,color:"#c07000",fontStyle:"italic"}}>{ev.importantMsg}</div>}
+          {ev.note&&<div style={{fontSize:11,color:C.muted,fontStyle:"italic"}}>{ev.note}</div>}
         </div>
-      );
-    }
+      </div>)}
+    </Card>
+  </div>}
 
-    function PCOSGlass({ done, onClick, label }) {
-      return (
-        <div onClick={onClick}
-          onMouseEnter={e => e.currentTarget.style.transform = "scale(1.05)"}
-          onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
-          style={{ transition: "transform 0.15s", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
-          <svg width="36" height="48" viewBox="0 0 36 48">
-            <defs>
-              <linearGradient id={"glass" + (done ? "On" : "Off")} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={done ? "#c4527a" : "#f0c8d8"} />
-                <stop offset="100%" stopColor={done ? "#8b3a5e" : "#e8b4c4"} />
-              </linearGradient>
-            </defs>
-            <path d="M7 6 L4 44 Q4 46 6 46 L30 46 Q32 46 32 44 L29 6 Z"
-              fill={"url(#glass" + (done ? "On" : "Off") + ")"} stroke={done ? "#8b3a5e" : "#e0b0c0"} strokeWidth="1.2" />
-            {done && <ellipse cx="14" cy="20" rx="4" ry="8" fill="rgba(255,255,255,0.18)" />}
-            <rect x="5" y="5" width="26" height="4" rx="2" fill={done ? "#c4527a" : "#f0c8d8"} />
-            <rect x="22" y="-2" width="3.5" height="34" rx="1.5" transform="rotate(8, 22, 0)"
-              fill={done ? "#f9a8c4" : "#f5d0e0"} stroke={done ? "#e07090" : "#e8b8cc"} strokeWidth="0.5" />
-            {done && <text x="18" y="40" textAnchor="middle" fontSize="10" fill="rgba(255,255,255,0.9)">✓</text>}
-          </svg>
-          <span style={{ fontSize: 10, color: done ? C.berry : C.muted, fontFamily: "'Jost'", fontWeight: 500, textAlign: "center" }}>{label}</span>
-        </div>
-      );
-    }
+  {/* ── HEALTH ── */}
+  {page==="health"&&<div style={P}>
+    <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:28,fontWeight:300,padding:"12px 2px 4px"}}>Helse</div>
+    <Card title="Tilskudd" emoji="✨"><SupplMini data={supplements} onChange={setSupplements} full={true}/></Card>
+    <Card title="Hudpleie" emoji="🌿"><SkincareTracker data={skincare} onChange={setSkincare}/></Card>
+    <Card title="Vann" emoji="💧"><WaterMini data={water} onChange={setWater}/></Card>
+    <Card title="Skritt" emoji="🚶‍♀️"><StepTracker data={steps} onChange={setSteps}/></Card>
+    <Card title="Trening" emoji="🏋️"><TrainingPlan data={training} onChange={setTraining}/></Card>
+    <Card title="Måltider" emoji="🍽️"><MealTracker data={meals} onChange={setMeals}/></Card>
+    <Card title="Menstruasjon" emoji="🌸"><MenstrualTracker data={menstrual} onChange={setMenstrual}/></Card>
+  </div>}
 
-    function FishOilCapsule({ done }) {
-      return (
-        <svg width="44" height="22" viewBox="0 0 44 22">
-          <defs>
-            <linearGradient id={"cap" + (done ? "On" : "Off")} x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%"   stopColor={done ? "#e8a050" : "#f0d8b8"} />
-              <stop offset="50%"  stopColor={done ? "#f0c060" : "#f8eccc"} />
-              <stop offset="100%" stopColor={done ? "#d08030" : "#e8c8a0"} />
-            </linearGradient>
-          </defs>
-          <ellipse cx="22" cy="11" rx="20" ry="9" fill={"url(#cap" + (done ? "On" : "Off") + ")"} stroke={done ? "#c07020" : "#d8b888"} strokeWidth="0.8" />
-          <ellipse cx="16" cy="8" rx="4" ry="3" fill="rgba(255,255,255,0.3)" />
-          {done && <text x="22" y="15" textAnchor="middle" fontSize="9" fill="rgba(255,255,255,0.85)">✓</text>}
-        </svg>
-      );
-    }
+  {/* ── CALENDAR ── */}
+  {page==="calendar"&&<div style={P}>
+    <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:28,fontWeight:300,padding:"12px 2px 4px"}}>Kalender</div>
+    <div style={{fontSize:11,color:C.muted,background:C.parchment,borderRadius:10,padding:"8px 12px",border:"1px solid "+C.border}}>
+      💡 For å koble til Apple Kalender: Eksporter hendelser fra Kalender-appen som .ics og importer dem. Appen lagrer egne hendelser lokalt.
+    </div>
+    <Card><CalendarFull events={events} onEvents={setEvents}/></Card>
+  </div>}
 
-    function SupplMini({ data, onChange, full }) {
-      const today = todayKey();
-      const day = new Date().getDay();
-      const log = data[today] || {};
-      const toggle = (k) => onChange({ ...data, [today]: { ...log, [k]: !log[k] } });
-      const isCloveDay = day === 3 || day === 6;
-      return (
-        <div>
-          {full && <div style={{ fontSize: 10, color: C.muted, textTransform: "uppercase", letterSpacing: 1.2, fontFamily: "'Jost'", fontWeight: 500, marginBottom: 12 }}>Tilskudd i dag</div>}
-          <div style={{ display: "flex", gap: 12, justifyContent: "center", marginBottom: 14 }}>
-            <PCOSGlass done={!!log.pcos_m} onClick={() => toggle("pcos_m")} label="Morgen" />
-            <PCOSGlass done={!!log.pcos_d} onClick={() => toggle("pcos_d")} label="Middag" />
-            {isCloveDay && (
-              <div onClick={() => toggle("nellik")}
-                onMouseEnter={e => e.currentTarget.style.transform = "scale(1.05)"}
-                onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
-                style={{ cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 5, transition: "transform 0.15s" }}>
-                <div style={{ fontSize: 28, lineHeight: 1 }}>🌿</div>
-                <span style={{ fontSize: 10, color: log.nellik ? C.sageDark : C.muted, fontFamily: "'Jost'", fontWeight: 500 }}>
-                  {log.nellik ? "✓ Nellik" : "Nellik"}
-                </span>
-              </div>
-            )}
-          </div>
-          <div style={{ background: C.parchment, borderRadius: 10, padding: "10px 12px" }}>
-            <div style={{ fontSize: 10, color: C.muted, textTransform: "uppercase", letterSpacing: 1, fontFamily: "'Jost'", fontWeight: 500, marginBottom: 8 }}>Tran · 3 kapsler</div>
-            <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-              {[0, 1, 2].map(i => <FishOilCapsule key={i} done={i < (log.tran || 0)} />)}
-            </div>
-            <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 8 }}>
-              <button onClick={() => onChange({ ...data, [today]: { ...log, tran: Math.max(0, (log.tran || 0) - 1) } })}
-                style={{ width: 28, height: 28, borderRadius: 8, border: "1px solid " + C.border, background: "#fff", cursor: "pointer", fontSize: 14, color: C.warm }}>−</button>
-              <span style={{ fontSize: 12, color: C.warm, fontFamily: "'Jost'", lineHeight: "28px" }}>{log.tran || 0} / 3</span>
-              <button onClick={() => onChange({ ...data, [today]: { ...log, tran: Math.min(3, (log.tran || 0) + 1) } })}
-                style={{ width: 28, height: 28, borderRadius: 8, border: "1px solid " + C.border, background: "#fff", cursor: "pointer", fontSize: 14, color: C.warm }}>+</button>
-            </div>
-          </div>
-          {!isCloveDay && <div style={{ fontSize: 9, color: C.blush, marginTop: 6, textAlign: "center", fontFamily: "'Jost'" }}>Nellik-dager: onsdag & lørdag</div>}
-        </div>
-      );
-    }
+</div>
+```
 
-    function MenstrualTracker({ data, onChange }) {
-      const today = todayKey();
-      const [showLog, setShowLog] = useState(null);
-      const FLOW = [
-        { val: "spot",   label: "Spotting", color: "#f9c8d8", dot: "#e8a0b8" },
-        { val: "light",  label: "Lett",     color: "#f0a0c0", dot: "#d87898" },
-        { val: "medium", label: "Middels",  color: "#d86090", dot: "#b83870" },
-        { val: "heavy",  label: "Kraftig",  color: "#a03060", dot: "#801840" },
-      ];
-      const SYMPTOMS = ["Kramper","Hodepine","Tretthet","Oppblåst","Humørsvingninger","Ryggsmerter"];
-      const getFlowColor = (flow) => (FLOW.find(f => f.val === flow) || {}).dot || "transparent";
-      const days = Array.from({ length: 7 }, (_, i) => {
-        const d = new Date(); d.setDate(d.getDate() - (6 - i));
-        return d.toISOString().slice(0, 10);
-      });
-      return (
-        <div>
-          <div style={{ display: "flex", gap: 4, marginBottom: 12 }}>
-            {days.map(key => {
-              const d = data[key] || {};
-              const isToday = key === today;
-              return (
-                <div key={key} onClick={() => setShowLog(showLog === key ? null : key)}
-                  style={{ flex: 1, textAlign: "center", cursor: "pointer", padding: "6px 2px", borderRadius: 8,
-                    background: isToday ? C.berryLight : "#fdf8f5",
-                    border: "1.5px solid " + (isToday ? C.berry : C.border), transition: "all 0.2s" }}>
-                  <div style={{ fontSize: 9, color: C.muted, fontFamily: "'Jost'", marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.5 }}>
-                    {DAY_NO[new Date(key + "T12:00:00").getDay()].slice(0, 2)}
-                  </div>
-                  <div style={{ fontSize: 11, fontFamily: "'Jost'", fontWeight: 500, color: isToday ? C.berry : C.warm, marginBottom: 4 }}>
-                    {parseInt(key.split("-")[2])}
-                  </div>
-                  <div style={{ width: 10, height: 10, borderRadius: "50%",
-                    background: d.flow ? getFlowColor(d.flow) : "transparent",
-                    border: d.flow ? "none" : "1px dashed " + C.blush, margin: "0 auto" }} />
-                </div>
-              );
-            })}
-          </div>
-          {showLog && (
-            <div style={{ background: C.berryLight, borderRadius: 12, padding: 14, border: "1px solid " + C.blush, marginBottom: 10 }}>
-              <div style={{ fontSize: 11, color: C.berry, fontFamily: "'Jost'", fontWeight: 500, marginBottom: 10 }}>
-                {showLog === today ? "I dag" : new Date(showLog + "T12:00:00").toLocaleDateString("no-NO", { weekday: "long", day: "numeric", month: "long" })}
-              </div>
-              <div style={{ fontSize: 10, color: C.muted, textTransform: "uppercase", letterSpacing: 0.8, fontFamily: "'Jost'", marginBottom: 6 }}>Blødning</div>
-              <div style={{ display: "flex", gap: 5, marginBottom: 12, flexWrap: "wrap" }}>
-                {FLOW.map(f => {
-                  const selected = (data[showLog] || {}).flow === f.val;
-                  return (
-                    <div key={f.val} onClick={() => {
-                      const cur = data[showLog] || {};
-                      onChange({ ...data, [showLog]: { ...cur, flow: cur.flow === f.val ? null : f.val } });
-                    }} style={{ padding: "4px 10px", borderRadius: 20, cursor: "pointer", fontSize: 11, fontFamily: "'Jost'",
-                      background: selected ? f.color : "#fff", border: "1.5px solid " + (selected ? f.dot : C.border),
-                      color: selected ? "#fff" : C.warm, transition: "all 0.2s", fontWeight: selected ? 500 : 400 }}>
-                      {f.label}
-                    </div>
-                  );
-                })}
-              </div>
-              <div style={{ fontSize: 10, color: C.muted, textTransform: "uppercase", letterSpacing: 0.8, fontFamily: "'Jost'", marginBottom: 6 }}>Symptomer</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-                {SYMPTOMS.map(s => {
-                  const selected = ((data[showLog] || {}).symptoms || []).includes(s);
-                  return (
-                    <div key={s} onClick={() => {
-                      const cur = (data[showLog] || {}).symptoms || [];
-                      const next = selected ? cur.filter(x => x !== s) : [...cur, s];
-                      onChange({ ...data, [showLog]: { ...(data[showLog] || {}), symptoms: next } });
-                    }} style={{ padding: "4px 10px", borderRadius: 20, cursor: "pointer", fontSize: 11, fontFamily: "'Jost'",
-                      background: selected ? C.berry : "#fff", border: "1.5px solid " + (selected ? C.berry : C.border),
-                      color: selected ? "#fff" : C.warm, transition: "all 0.2s" }}>
-                      {s}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-          <div style={{ fontSize: 10, color: C.muted, fontFamily: "'Jost'", textAlign: "center" }}>Trykk på en dag for å logge</div>
-        </div>
-      );
-    }
+  </div>);
+}
 
-    function QuickNotes({ notes, onChange }) {
-      const [text, setText] = useState("");
-      const add = () => { if (!text.trim()) return; onChange([{ id: Date.now(), text: text.trim(), ts: new Date().toLocaleString("no-NO") }, ...notes]); setText(""); };
-      const del = (id) => onChange(notes.filter(n => n.id !== id));
-      return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <div style={{ display: "flex", gap: 5 }}>
-            <input value={text} onChange={e => setText(e.target.value)} onKeyDown={e => e.key === "Enter" && add()}
-              placeholder="Skriv en notis..."
-              style={{ flex: 1, padding: "7px 12px", borderRadius: 20, border: "1.5px solid " + C.border, fontSize: 12, fontFamily: "'Jost'", background: C.cream, outline: "none", color: C.charcoal }} />
-            <button onClick={add} style={{ width: 32, height: 32, borderRadius: "50%", background: C.roseDark, color: "#fff", border: "none", cursor: "pointer", fontSize: 16, lineHeight: 1, flexShrink: 0 }}>+</button>
-          </div>
-          <div style={{ maxHeight: 150, overflowY: "auto", display: "flex", flexDirection: "column", gap: 4 }}>
-            {notes.map(n => (
-              <div key={n.id} style={{ padding: "7px 11px", background: "#fffbf5", borderRadius: 10, border: "1px solid #f5e5c0", display: "flex", justifyContent: "space-between", gap: 6 }}>
-                <span style={{ fontSize: 12, color: C.charcoal, flex: 1, fontFamily: "'Jost'" }}>{n.text}</span>
-                <button onClick={() => del(n.id)} style={{ background: "none", border: "none", cursor: "pointer", color: C.blush, fontSize: 14, padding: 0, flexShrink: 0 }}>×</button>
-              </div>
-            ))}
-            {notes.length === 0 && <div style={{ fontSize: 11, color: C.blush, textAlign: "center", padding: "8px 0", fontFamily: "'Jost'" }}>Ingen notiser</div>}
-          </div>
-        </div>
-      );
-    }
-
-    function TodaySchedule({ events }) {
-      const today = todayKey();
-      const todayEvents = events.filter(e => e.date === today && e.time).sort((a, b) => a.time.localeCompare(b.time));
-      const now = new Date();
-      const nowMins = now.getHours() * 60 + now.getMinutes();
-      const TAG = { personal: C.rose, study: "#d4a060", health: C.sage };
-      if (todayEvents.length === 0) return <div style={{ fontSize: 11, color: C.blush, textAlign: "center", padding: "14px 0", fontFamily: "'Jost'" }}>Ingen hendelser i dag</div>;
-      return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-          {todayEvents.map(ev => {
-            const [h, m] = ev.time.split(":").map(Number);
-            const evMins = h * 60 + m;
-            const past = evMins < nowMins;
-            const current = evMins >= nowMins && evMins < nowMins + 60;
-            return (
-              <div key={ev.id} style={{ display: "flex", alignItems: "center", gap: 7, padding: "5px 9px", borderRadius: 9,
-                background: current ? "#fff5f0" : C.cream, border: "1px solid " + (current ? C.rose : C.border), opacity: past ? 0.55 : 1 }}>
-                <div style={{ minWidth: 32, fontSize: 11, fontWeight: 500, color: C.warm, fontFamily: "'Jost'" }}>{ev.time}</div>
-                <div style={{ width: 5, height: 5, borderRadius: "50%", background: TAG[ev.tag] || C.rose, flexShrink: 0 }} />
-                <span style={{ fontSize: 12, color: C.charcoal, flex: 1, fontFamily: "'Jost'" }}>{ev.title}</span>
-                {current && <span style={{ fontSize: 8, background: C.blush, color: C.berry, padding: "1px 5px", borderRadius: 4, fontWeight: 600, fontFamily: "'Jost'", letterSpacing: 0.5 }}>NÅ</span>}
-              </div>
-            );
-          })}
-        </div>
-      );
-    }
-
-    function AlertPanel({ events, supplements, water }) {
-      const today = todayKey();
-      const d = new Date();
-      const day = d.getDay();
-      const alerts = [];
-      const suppLog = supplements[today] || {};
-      if (!suppLog.pcos_m && d.getHours() >= 7)  alerts.push({ msg: "Ta PCOS-pulver (morgen)", urgent: true });
-      if (!suppLog.pcos_d && d.getHours() >= 12) alerts.push({ msg: "Ta PCOS-pulver (middag)", urgent: true });
-      if ((day === 3 || day === 6) && !suppLog.nellik) alerts.push({ msg: "Nellik-dag — husk å ta det", urgent: d.getHours() >= 10 });
-      if ((suppLog.tran || 0) < 3 && d.getHours() >= 18) alerts.push({ msg: "Tran: " + (3 - (suppLog.tran || 0)) + " kapsler igjen", urgent: false });
-      const glasses = water[today] || 0;
-      if (glasses < 7 && d.getHours() >= 18) alerts.push({ msg: (7 - glasses) + " glass vann igjen", urgent: true });
-      for (let i = 0; i <= 7; i++) {
-        const dd = new Date(d); dd.setDate(d.getDate() + i);
-        const key = dd.toISOString().slice(0, 10);
-        events.filter(e => e.date === key).forEach(ev => {
-          const label = i === 0 ? "i dag" : i === 1 ? "i morgen" : DAY_NO[dd.getDay()].toLowerCase() + " " + dd.getDate() + ".";
-          alerts.push({ msg: ev.title + " — " + label + (ev.time ? " kl. " + ev.time : ""), urgent: i === 0 });
-        });
-      }
-      if (alerts.length === 0) return <div style={{ fontSize: 11, color: C.blush, textAlign: "center", padding: "8px 0", fontFamily: "'Jost'" }}>Alt ser bra ut ✨</div>;
-      return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          {alerts.slice(0, 7).map((a, i) => (
-            <div key={i} style={{ padding: "5px 10px", borderRadius: 8, fontSize: 11, fontFamily: "'Jost'",
-              background: a.urgent ? "#fff5f0" : C.cream, border: "1px solid " + (a.urgent ? C.blush : C.border),
-              color: a.urgent ? C.berry : C.warm }}>
-              {a.urgent ? "· " : "○ "}{a.msg}
-            </div>
-          ))}
-        </div>
-      );
-    }
-
-    function TodoList({ todos, onChange, accent }) {
-      accent = accent || C.roseDark;
-      const [newText, setNewText] = useState("");
-      const [newRec, setNewRec] = useState("none");
-      const today = todayKey();
-      const day = new Date().getDay();
-      const isVisible = (t) => {
-        if (t.recurring === "none") return true;
-        if (t.recurring === "daily") return true;
-        if (t.recurring === "weekly-wed-sat") return day === 3 || day === 6;
-        return true;
-      };
-      const isDone = (t) => (t.doneOn || []).includes(today);
-      const toggle = (id) => onChange(todos.map(t => {
-        if (t.id !== id) return t;
-        const done = t.doneOn || [];
-        return isDone(t) ? { ...t, doneOn: done.filter(d => d !== today) } : { ...t, doneOn: [...done, today] };
-      }));
-      const del = (id) => onChange(todos.filter(t => t.id !== id));
-      const add = () => {
-        if (!newText.trim()) return;
-        onChange([...todos, { id: Date.now(), text: newText.trim(), recurring: newRec, doneOn: [] }]);
-        setNewText(""); setNewRec("none");
-      };
-      return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-          {todos.filter(isVisible).map(t => (
-            <div key={t.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 10px", borderRadius: 10,
-              background: isDone(t) ? C.sageLight : C.cream, border: "1px solid " + (isDone(t) ? C.sage : C.border), transition: "all 0.2s" }}>
-              <div onClick={() => toggle(t.id)} style={{ width: 18, height: 18, borderRadius: "50%",
-                border: "2px solid " + (isDone(t) ? C.sageDark : C.rose), background: isDone(t) ? C.sageDark : "transparent",
-                cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all 0.2s" }}>
-                {isDone(t) && <span style={{ color: "white", fontSize: 9, lineHeight: 1 }}>✓</span>}
-              </div>
-              <span style={{ flex: 1, fontSize: 13, fontFamily: "'Jost'", color: isDone(t) ? C.muted : C.charcoal, textDecoration: isDone(t) ? "line-through" : "none" }}>{t.text}</span>
-              {t.recurring !== "none" && <span style={{ fontSize: 9, color: C.muted, background: C.parchment, padding: "1px 6px", borderRadius: 10, fontFamily: "'Jost'" }}>
-                {t.recurring === "daily" ? "daglig" : t.recurring === "weekly" ? "ukentlig" : "ons/lør"}
-              </span>}
-              <button onClick={() => del(t.id)} style={{ background: "none", border: "none", cursor: "pointer", color: C.blush, fontSize: 14, padding: 0 }}>×</button>
-            </div>
-          ))}
-          {todos.filter(isVisible).length === 0 && <div style={{ fontSize: 11, color: C.blush, textAlign: "center", padding: "8px 0", fontFamily: "'Jost'" }}>Ingen gjøremål</div>}
-          <div style={{ display: "flex", gap: 5, marginTop: 4 }}>
-            <input value={newText} onChange={e => setNewText(e.target.value)} onKeyDown={e => e.key === "Enter" && add()} placeholder="Legg til..."
-              style={{ flex: 1, padding: "7px 12px", borderRadius: 20, border: "1.5px solid " + C.border, fontSize: 12, fontFamily: "'Jost'", background: C.cream, outline: "none", color: C.charcoal }} />
-            <select value={newRec} onChange={e => setNewRec(e.target.value)}
-              style={{ padding: "7px 6px", borderRadius: 10, border: "1.5px solid " + C.border, fontSize: 11, color: C.warm, background: C.cream, fontFamily: "'Jost'" }}>
-              <option value="none">Én gang</option>
-              <option value="daily">Daglig</option>
-              <option value="weekly">Ukentlig</option>
-              <option value="weekly-wed-sat">Ons & lør</option>
-            </select>
-            <button onClick={add} style={{ width: 34, height: 34, borderRadius: "50%", background: accent, color: "#fff", border: "none", cursor: "pointer", fontSize: 18, lineHeight: 1, flexShrink: 0 }}>+</button>
-          </div>
-        </div>
-      );
-    }
-
-    function MealTracker({ data, onChange }) {
-      const today = todayKey();
-      const meals = data[today] || {};
-      const [extra, setExtra] = useStore("maia-extra-meals", ["Mellommåltid", "Kveldsmat"]);
-      const [newMeal, setNewMeal] = useState("");
-      const allMeals = ["Frokost", "Lunsj", "Middag", ...extra];
-      const EMOJIS = { Frokost: "🌸", Lunsj: "🫖", Middag: "🍽️", Mellommåltid: "🍎", Kveldsmat: "🌙" };
-      const toggle = (m) => onChange({ ...data, [today]: { ...meals, [m]: !meals[m] } });
-      const addMeal = () => { if (newMeal.trim()) { setExtra([...extra, newMeal.trim()]); setNewMeal(""); } };
-      return (
-        <div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
-            {allMeals.map(m => (
-              <div key={m} onClick={() => toggle(m)} style={{ padding: "6px 14px", borderRadius: 20, cursor: "pointer", fontSize: 12, fontFamily: "'Jost'",
-                background: meals[m] ? C.parchment : C.cream, border: "1.5px solid " + (meals[m] ? C.roseDark : C.border),
-                color: meals[m] ? C.roseDark : C.warm, transition: "all 0.2s", display: "flex", alignItems: "center", gap: 5 }}>
-                <span style={{ fontSize: 11 }}>{EMOJIS[m] || "🍴"}</span>
-                {meals[m] && <span style={{ fontSize: 9, color: C.sageDark }}>✓</span>}
-                {m}
-              </div>
-            ))}
-          </div>
-          <div style={{ display: "flex", gap: 5 }}>
-            <input value={newMeal} onChange={e => setNewMeal(e.target.value)} onKeyDown={e => e.key === "Enter" && addMeal()} placeholder="Legg til måltid..."
-              style={{ flex: 1, padding: "7px 12px", borderRadius: 20, border: "1.5px solid " + C.border, fontSize: 12, fontFamily: "'Jost'", background: C.cream, outline: "none" }} />
-            <button onClick={addMeal} style={{ width: 32, height: 32, borderRadius: "50%", background: "#d4a060", color: "#fff", border: "none", cursor: "pointer", fontSize: 16, flexShrink: 0 }}>+</button>
-          </div>
-        </div>
-      );
-    }
-
-    function TrainingPlan({ data, onChange }) {
-      const today = todayKey();
-      const day = new Date().getDay();
-      const strengthDays = data.strengthDays || [1, 3, 5];
-      const log = data.log || {};
-      const todayDone = log[today] || {};
-      const isStrengthDay = strengthDays.includes(day);
-      const DS = ["Søn","Man","Tir","Ons","Tor","Fre","Lør"];
-      const toggleWorkout = (type) => onChange({ ...data, log: { ...log, [today]: { ...todayDone, [type]: !todayDone[type] } } });
-      return (
-        <div>
-          <div style={{ display: "flex", gap: 3, marginBottom: 12 }}>
-            {DS.map((label, i) => (
-              <div key={i} onClick={() => { const cur = strengthDays.includes(i) ? strengthDays.filter(d => d !== i) : [...strengthDays, i]; onChange({ ...data, strengthDays: cur }); }}
-                style={{ flex: 1, height: 30, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 9, fontWeight: 500, fontFamily: "'Jost'",
-                  background: strengthDays.includes(i) ? C.roseDark : C.parchment, color: strengthDays.includes(i) ? "#fff" : C.muted,
-                  border: i === day ? "2px solid " + C.berry : "2px solid transparent", transition: "all 0.2s" }}>
-                {label}
-              </div>
-            ))}
-          </div>
-          <div style={{ display: "flex", gap: 8 }}>
-            {isStrengthDay && (
-              <div onClick={() => toggleWorkout("strength")} style={{ flex: 1, padding: "12px 10px", borderRadius: 12, cursor: "pointer", textAlign: "center",
-                background: todayDone.strength ? C.sageLight : C.cream, border: "1.5px solid " + (todayDone.strength ? C.sage : C.border), transition: "all 0.2s" }}>
-                <div style={{ fontSize: 22, marginBottom: 4 }}>🏋️</div>
-                <div style={{ fontSize: 12, fontWeight: 500, fontFamily: "'Jost'", color: todayDone.strength ? C.sageDark : C.warm }}>Styrke</div>
-                <div style={{ fontSize: 10, color: C.muted, fontFamily: "'Jost'" }}>{todayDone.strength ? "✓ Ferdig" : "Ikke gjort"}</div>
-              </div>
-            )}
-            <div onClick={() => toggleWorkout("walk")} style={{ flex: 1, padding: "12px 10px", borderRadius: 12, cursor: "pointer", textAlign: "center",
-              background: todayDone.walk ? C.sageLight : C.cream, border: "1.5px solid " + (todayDone.walk ? C.sage : C.border), transition: "all 0.2s" }}>
-              <div style={{ fontSize: 22, marginBottom: 4 }}>🚶‍♀️</div>
-              <div style={{ fontSize: 12, fontWeight: 500, fontFamily: "'Jost'", color: todayDone.walk ? C.sageDark : C.warm }}>10k skritt</div>
-              <div style={{ fontSize: 10, color: C.muted, fontFamily: "'Jost'" }}>{todayDone.walk ? "✓ Ferdig" : "Ikke gjort"}</div>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    function StepTracker({ data, onChange }) {
-      const today = todayKey();
-      const steps = data[today] || 0;
-      const goal = 10000;
-      const pct = Math.min(100, (steps / goal) * 100);
-      const [input, setInput] = useState("");
-      const save = () => { const n = parseInt(input); if (!isNaN(n)) { onChange({ ...data, [today]: n }); setInput(""); } };
-      return (
-        <div>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-            <span style={{ fontSize: 10, color: C.muted, textTransform: "uppercase", letterSpacing: 1, fontFamily: "'Jost'", fontWeight: 500 }}>Skritt</span>
-            <span style={{ fontSize: 12, fontWeight: 500, fontFamily: "'Jost'", color: C.warm }}>{steps.toLocaleString("no")} / 10 000</span>
-          </div>
-          <div style={{ height: 7, background: C.parchment, borderRadius: 4, marginBottom: 8, overflow: "hidden" }}>
-            <div style={{ width: pct + "%", height: "100%", background: pct >= 100 ? C.sageDark : C.rose, borderRadius: 4, transition: "width 0.4s" }} />
-          </div>
-          <div style={{ display: "flex", gap: 6 }}>
-            <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === "Enter" && save()} placeholder="Oppdater skritt..."
-              style={{ flex: 1, padding: "7px 12px", borderRadius: 20, border: "1.5px solid " + C.border, fontSize: 12, fontFamily: "'Jost'", background: C.cream, outline: "none" }} />
-            <button onClick={save} style={{ padding: "7px 14px", borderRadius: 20, background: C.charcoal, color: "#fff", border: "none", cursor: "pointer", fontSize: 12, fontFamily: "'Jost'" }}>Lagre</button>
-          </div>
-        </div>
-      );
-    }
-
-    function CleaningRotation({ data, onChange }) {
-      const tasks = data.tasks || ["Bad", "Kjøkken", "Gulv", "Andre oppgaver"];
-      const startWeek = data.startWeek || 1;
-      const week = getWeekNumber(new Date());
-      const idx = (week - startWeek + 400) % tasks.length;
-      const current = tasks[idx];
-      const log = data.log || {};
-      const today = todayKey();
-      const done = log[today] === current;
-      const [editing, setEditing] = useState(false);
-      const [editTasks, setEditTasks] = useState(tasks.join("\n"));
-      const saveTasks = () => { const t = editTasks.split("\n").map(s => s.trim()).filter(Boolean); onChange({ ...data, tasks: t }); setEditing(false); };
-      return (
-        <div>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-            <span style={{ fontSize: 10, color: C.muted, textTransform: "uppercase", letterSpacing: 1, fontFamily: "'Jost'", fontWeight: 500 }}>Uke {week}</span>
-            <button onClick={() => setEditing(!editing)} style={{ fontSize: 11, color: C.roseDark, background: "none", border: "none", cursor: "pointer", fontFamily: "'Jost'" }}>Endre</button>
-          </div>
-          {!editing ? (
-            <div>
-              <div onClick={() => onChange({ ...data, log: { ...log, [today]: done ? null : current } })}
-                style={{ padding: "10px 14px", borderRadius: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 10,
-                  background: done ? C.sageLight : C.parchment, border: "1.5px solid " + (done ? C.sage : C.border), transition: "all 0.2s" }}>
-                <span style={{ fontSize: 20 }}>🧹</span>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 500, fontFamily: "'Jost'", color: done ? C.sageDark : C.charcoal }}>Denne uka: {current}</div>
-                  <div style={{ fontSize: 10, color: C.muted, fontFamily: "'Jost'" }}>{done ? "✓ Ferdig" : "Trykk for å markere"}</div>
-                </div>
-              </div>
-              <div style={{ display: "flex", gap: 3, marginTop: 8 }}>
-                {tasks.map((t, i) => (
-                  <div key={i} style={{ flex: 1, padding: "3px 2px", textAlign: "center", borderRadius: 6, fontSize: 9, fontFamily: "'Jost'",
-                    background: i === idx ? C.roseDark : C.parchment, color: i === idx ? "#fff" : C.muted }}>
-                    {t.split(" ")[0]}
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div>
-              <textarea value={editTasks} onChange={e => setEditTasks(e.target.value)} rows={5}
-                style={{ width: "100%", padding: "8px 12px", borderRadius: 10, border: "1.5px solid " + C.border, fontSize: 12, fontFamily: "'Jost'", resize: "vertical", outline: "none", boxSizing: "border-box", background: C.cream }} />
-              <div style={{ display: "flex", gap: 5, marginTop: 6 }}>
-                <button onClick={saveTasks} style={{ flex: 1, padding: "7px", borderRadius: 10, background: C.charcoal, color: "#fff", border: "none", cursor: "pointer", fontSize: 12, fontFamily: "'Jost'" }}>Lagre</button>
-                <button onClick={() => setEditing(false)} style={{ flex: 1, padding: "7px", borderRadius: 10, background: C.parchment, color: C.warm, border: "none", cursor: "pointer", fontSize: 12, fontFamily: "'Jost'" }}>Avbryt</button>
-              </div>
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    function SleepWidget({ settings, onSettings }) {
-      const [editing, setEditing] = useState(false);
-      const wakeH = settings.wakeHour != null ? settings.wakeHour : 6;
-      const wakeM = settings.wakeMin  != null ? settings.wakeMin  : 30;
-      const bedH = ((wakeH - 9 + 24) % 24);
-      return (
-        <div>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
-            <span style={{ fontSize: 10, color: C.muted, textTransform: "uppercase", letterSpacing: 1, fontFamily: "'Jost'", fontWeight: 500 }}>Søvn · 9 timer</span>
-            <button onClick={() => setEditing(!editing)} style={{ fontSize: 11, color: C.roseDark, background: "none", border: "none", cursor: "pointer", fontFamily: "'Jost'" }}>Endre</button>
-          </div>
-          {!editing ? (
-            <div style={{ display: "flex", gap: 8 }}>
-              {[{ label: "Vekking", val: pad(wakeH) + ":" + pad(wakeM), emoji: "🌅" }, { label: "Leggetid", val: pad(bedH) + ":" + pad(wakeM), emoji: "🌙" }].map(item => (
-                <div key={item.label} style={{ flex: 1, padding: "10px 12px", background: C.parchment, borderRadius: 12, border: "1px solid " + C.border, textAlign: "center" }}>
-                  <div style={{ fontSize: 16, marginBottom: 3 }}>{item.emoji}</div>
-                  <div style={{ fontSize: 9, color: C.muted, textTransform: "uppercase", letterSpacing: 0.8, fontFamily: "'Jost'", marginBottom: 3 }}>{item.label}</div>
-                  <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 22, color: C.charcoal, fontWeight: 400 }}>{item.val}</div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
-              <span style={{ fontSize: 12, fontFamily: "'Jost'", color: C.warm }}>Vekking:</span>
-              <input type="number" min={0} max={23} value={wakeH} onChange={e => onSettings({ ...settings, wakeHour: parseInt(e.target.value) })}
-                style={{ width: 44, padding: "5px 6px", borderRadius: 8, border: "1.5px solid " + C.border, fontSize: 13, outline: "none", background: C.cream }} />
-              <span style={{ color: C.muted }}>:</span>
-              <input type="number" min={0} max={59} value={wakeM} onChange={e => onSettings({ ...settings, wakeMin: parseInt(e.target.value) })}
-                style={{ width: 44, padding: "5px 6px", borderRadius: 8, border: "1.5px solid " + C.border, fontSize: 13, outline: "none", background: C.cream }} />
-              <button onClick={() => setEditing(false)} style={{ padding: "6px 14px", borderRadius: 20, background: C.charcoal, color: "#fff", border: "none", cursor: "pointer", fontSize: 12, fontFamily: "'Jost'" }}>OK</button>
-            </div>
-          )}
-          <div style={{ fontSize: 9, color: C.muted, marginTop: 8, textAlign: "center", fontFamily: "'Jost'", letterSpacing: 0.5 }}>Husk å dusje før du legger deg 🛁</div>
-        </div>
-      );
-    }
-
-    function CalendarFull({ events, onEvents }) {
-      const [current, setCurrent] = useState(new Date());
-      const [view, setView] = useState("month");
-      const [showAdd, setShowAdd] = useState(null);
-      const [form, setForm] = useState({ title: "", time: "", note: "", tag: "personal" });
-      const year = current.getFullYear();
-      const month = current.getMonth();
-      const firstDay = new Date(year, month, 1).getDay();
-      const daysInMonth = new Date(year, month + 1, 0).getDate();
-      const today = new Date();
-      const TAG = { personal: C.rose, study: "#d4a060", health: C.sage };
-      const addEvent = () => { if (!form.title.trim() || !showAdd) return; onEvents([...events, { id: Date.now(), date: showAdd, ...form }]); setForm({ title: "", time: "", note: "", tag: "personal" }); setShowAdd(null); };
-      const delEvent = (id) => onEvents(events.filter(e => e.id !== id));
-      const dateKey = (d) => year + "-" + pad(month + 1) + "-" + pad(d);
-      const cells = [];
-      for (let i = 0; i < (firstDay === 0 ? 6 : firstDay - 1); i++) cells.push(null);
-      for (let d = 1; d <= daysInMonth; d++) cells.push(d);
-      const weekDays = Array.from({ length: 7 }, (_, i) => { const d = new Date(today); d.setDate(today.getDate() + i); return d; });
-      return (
-        <div>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-            <div style={{ display: "flex", gap: 5 }}>
-              {["month", "week"].map(v => (
-                <button key={v} onClick={() => setView(v)} style={{ padding: "4px 14px", borderRadius: 20, border: "none", cursor: "pointer", fontSize: 11, fontFamily: "'Jost'",
-                  background: view === v ? C.charcoal : C.parchment, color: view === v ? "#fff" : C.warm }}>
-                  {v === "month" ? "Måned" : "Uke"}
-                </button>
-              ))}
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <button onClick={() => setCurrent(new Date(year, month - 1))} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 18, color: C.muted }}>‹</button>
-              <span style={{ fontSize: 14, fontFamily: "'Cormorant Garamond', serif", fontWeight: 400, minWidth: 130, textAlign: "center", color: C.charcoal }}>{MON_NO[month]} {year}</span>
-              <button onClick={() => setCurrent(new Date(year, month + 1))} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 18, color: C.muted }}>›</button>
-            </div>
-          </div>
-          {view === "month" && (
-            <div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", marginBottom: 4 }}>
-                {["Ma","Ti","On","To","Fr","Lø","Sø"].map(d => <div key={d} style={{ textAlign: "center", fontSize: 10, color: C.muted, padding: "4px 0", fontFamily: "'Jost'", fontWeight: 500, letterSpacing: 0.5 }}>{d}</div>)}
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 2 }}>
-                {cells.map((d, i) => {
-                  if (!d) return <div key={i}></div>;
-                  const key = dateKey(d);
-                  const dayEvs = events.filter(e => e.date === key);
-                  const isToday = today.getDate() === d && today.getMonth() === month && today.getFullYear() === year;
-                  return (
-                    <div key={i} onClick={() => setShowAdd(key)} style={{ minHeight: 44, padding: "4px", borderRadius: 8, cursor: "pointer",
-                      background: isToday ? C.charcoal : showAdd === key ? C.berryLight : C.cream,
-                      border: "1px solid " + (isToday ? C.charcoal : showAdd === key ? C.mauve : C.border), transition: "all 0.15s" }}>
-                      <div style={{ fontSize: 11, color: isToday ? "#fff" : C.warm, fontWeight: isToday ? 500 : 400, marginBottom: 2, fontFamily: "'Jost'" }}>{d}</div>
-                      {dayEvs.slice(0, 2).map(ev => <div key={ev.id} style={{ fontSize: 8, background: TAG[ev.tag] || C.rose, color: "#fff", borderRadius: 3, padding: "1px 3px", marginBottom: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontFamily: "'Jost'" }}>{ev.title}</div>)}
-                      {dayEvs.length > 2 && <div style={{ fontSize: 8, color: C.muted }}>+{dayEvs.length - 2}</div>}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-          {view === "week" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              {weekDays.map((d, i) => {
-                const key = d.toISOString().slice(0, 10);
-                const dayEvs = events.filter(e => e.date === key);
-                return (
-                  <div key={key} style={{ padding: "8px 12px", borderRadius: 12, background: i === 0 ? C.parchment : C.cream, border: "1px solid " + C.border }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: dayEvs.length ? 6 : 0 }}>
-                      <span style={{ fontSize: 12, fontWeight: i === 0 ? 500 : 400, color: i === 0 ? C.charcoal : C.warm, fontFamily: "'Jost'" }}>
-                        {i === 0 ? "I dag" : DAY_NO[d.getDay()]} {d.getDate()}. {MON_S[d.getMonth()]}
-                      </span>
-                      <button onClick={() => setShowAdd(key)} style={{ fontSize: 11, color: C.roseDark, background: "none", border: "none", cursor: "pointer", fontFamily: "'Jost'" }}>+ legg til</button>
-                    </div>
-                    {dayEvs.map(ev => (
-                      <div key={ev.id} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontFamily: "'Jost'", color: C.warm, padding: "2px 0" }}>
-                        <div style={{ width: 6, height: 6, borderRadius: "50%", background: TAG[ev.tag] || C.rose, flexShrink: 0 }} />
-                        {ev.time && <span style={{ fontSize: 11, color: C.muted, minWidth: 34 }}>{ev.time}</span>}
-                        <span style={{ flex: 1 }}>{ev.title}</span>
-                        <button onClick={() => delEvent(ev.id)} style={{ background: "none", border: "none", cursor: "pointer", color: C.blush, fontSize: 13 }}>×</button>
-                      </div>
-                    ))}
-                    {dayEvs.length === 0 && <div style={{ fontSize: 11, color: C.border, fontFamily: "'Jost'" }}>Ingen hendelser</div>}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-          {showAdd && (
-            <div style={{ marginTop: 14, padding: 14, borderRadius: 14, background: C.parchment, border: "1.5px solid " + C.border }}>
-              <div style={{ fontSize: 12, color: C.muted, marginBottom: 10, fontFamily: "'Jost'" }}>Ny hendelse — {showAdd}</div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-                <input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="Tittel"
-                  style={{ padding: "8px 12px", borderRadius: 10, border: "1.5px solid " + C.border, fontSize: 13, fontFamily: "'Jost'", background: C.cream, outline: "none", color: C.charcoal }} />
-                <div style={{ display: "flex", gap: 6 }}>
-                  <input value={form.time} onChange={e => setForm({ ...form, time: e.target.value })} type="time"
-                    style={{ flex: 1, padding: "8px 10px", borderRadius: 10, border: "1.5px solid " + C.border, fontSize: 13, background: C.cream }} />
-                  <select value={form.tag} onChange={e => setForm({ ...form, tag: e.target.value })}
-                    style={{ flex: 1, padding: "8px 10px", borderRadius: 10, border: "1.5px solid " + C.border, fontSize: 13, fontFamily: "'Jost'", background: C.cream, color: C.warm }}>
-                    <option value="personal">Personlig</option>
-                    <option value="study">Studie</option>
-                    <option value="health">Helse</option>
-                  </select>
-                </div>
-                <input value={form.note} onChange={e => setForm({ ...form, note: e.target.value })} placeholder="Notat (valgfritt)"
-                  style={{ padding: "8px 12px", borderRadius: 10, border: "1.5px solid " + C.border, fontSize: 13, fontFamily: "'Jost'", background: C.cream, outline: "none" }} />
-                <div style={{ display: "flex", gap: 6 }}>
-                  <button onClick={addEvent} style={{ flex: 1, padding: "8px", borderRadius: 20, background: C.charcoal, color: "#fff", border: "none", cursor: "pointer", fontSize: 13, fontFamily: "'Jost'" }}>Legg til</button>
-                  <button onClick={() => setShowAdd(null)} style={{ flex: 1, padding: "8px", borderRadius: 20, background: C.parchment, color: C.warm, border: "1px solid " + C.border, cursor: "pointer", fontSize: 13, fontFamily: "'Jost'" }}>Avbryt</button>
-                </div>
-              </div>
-              {events.filter(e => e.date === showAdd).map(ev => (
-                <div key={ev.id} style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 0", fontSize: 12, marginTop: 6, borderTop: "1px solid " + C.parchment }}>
-                  <div style={{ width: 6, height: 6, borderRadius: "50%", background: TAG[ev.tag] || C.rose }} />
-                  {ev.time && <span style={{ color: C.muted }}>{ev.time}</span>}
-                  <span style={{ flex: 1, fontFamily: "'Jost'" }}>{ev.title}</span>
-                  <button onClick={() => delEvent(ev.id)} style={{ background: "none", border: "none", cursor: "pointer", color: C.blush, fontSize: 14 }}>×</button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    function Card({ title, emoji, children, style: s }) {
-      return (
-        <div style={{ background: C.cardBg, borderRadius: 16, padding: "14px 16px", border: "1px solid " + C.border, boxShadow: shadow, ...(s || {}) }}>
-          {title && (
-            <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 15, fontWeight: 400, color: C.charcoal, marginBottom: 12, paddingBottom: 8, borderBottom: "1px solid " + C.parchment, display: "flex", alignItems: "center", gap: 6, letterSpacing: 0.2 }}>
-              {emoji && <span style={{ fontSize: 14 }}>{emoji}</span>} {title}
-            </div>
-          )}
-          {children}
-        </div>
-      );
-    }
-
-    const PAGES = [
-      { id: "home",     label: "Hjem",      icon: "⌂" },
-      { id: "personal", label: "Personlig", icon: "♡" },
-      { id: "study",    label: "Studie",    icon: "◈" },
-      { id: "health",   label: "Helse",     icon: "◎" },
-      { id: "calendar", label: "Kalender",  icon: "▦" },
-    ];
-
-    function App() {
-      const [page, setPage] = useState("home");
-      const [water,       setWater]       = useStore("maia-water", {});
-      const [steps,       setSteps]       = useStore("maia-steps", {});
-      const [notes,       setNotes]       = useStore("maia-notes", []);
-      const [pTodos,      setPTodos]      = useStore("maia-ptodos", [
-        { id: 1, text: "Dusje morgen", recurring: "daily", doneOn: [] },
-        { id: 2, text: "Dusje kveld",  recurring: "daily", doneOn: [] },
-      ]);
-      const [sTodos,      setSTodos]      = useStore("maia-stodos", []);
-      const [events,      setEvents]      = useStore("maia-events", []);
-      const [supplements, setSupplements] = useStore("maia-supplements", {});
-      const [meals,       setMeals]       = useStore("maia-meals", {});
-      const [training,    setTraining]    = useStore("maia-training", { strengthDays: [1, 3, 5], log: {} });
-      const [cleaning,    setCleaning]    = useStore("maia-cleaning", { tasks: ["Bad", "Kjøkken", "Gulv", "Andre oppgaver"], startWeek: 1, log: {} });
-      const [sleep,       setSleep]       = useStore("maia-sleep", { wakeHour: 6, wakeMin: 30 });
-      const [menstrual,   setMenstrual]   = useStore("maia-menstrual", {});
-      const [greeting, setGreeting] = useState(getGreeting());
-      useEffect(() => { const t = setInterval(() => setGreeting(getGreeting()), 60000); return () => clearInterval(t); }, []);
-
-      const d = new Date();
-      const today = todayKey();
-      const dayNum = d.getDay();
-
-      const allTodos = [...pTodos, ...sTodos].filter(t => {
-        if (t.recurring === "none") return !(t.doneOn || []).includes(today);
-        if (t.recurring === "daily") return true;
-        if (t.recurring === "weekly-wed-sat") return dayNum === 3 || dayNum === 6;
-        return true;
-      });
-
-      const toggleTodo = (id) => {
-        const inP = pTodos.find(x => x.id === id);
-        const update = (list, set) => set(list.map(t => {
-          if (t.id !== id) return t;
-          const done = (t.doneOn || []).includes(today);
-          return done ? { ...t, doneOn: t.doneOn.filter(x => x !== today) } : { ...t, doneOn: [...(t.doneOn || []), today] };
-        }));
-        inP ? update(pTodos, setPTodos) : update(sTodos, setSTodos);
-      };
-
-      return (
-        <div style={{ fontFamily: "'Jost', sans-serif", minHeight: "100vh", background: C.cream, color: C.charcoal }}>
-
-          {/* Bottom nav */}
-          <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "rgba(253,248,243,0.96)", backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)", borderTop: "1px solid " + C.border, display: "flex", justifyContent: "space-around", padding: "8px 0 16px", zIndex: 200 }}>
-            {PAGES.map(n => (
-              <button key={n.id} onClick={() => setPage(n.id)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, background: "none", border: "none", cursor: "pointer", padding: "4px 10px" }}>
-                <div style={{ width: 36, height: 26, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", background: page === n.id ? C.charcoal : "transparent", transition: "all 0.25s" }}>
-                  <span style={{ fontSize: 13, filter: page === n.id ? "invert(1)" : "none", opacity: page === n.id ? 1 : 0.35 }}>{n.icon}</span>
-                </div>
-                <span style={{ fontSize: 9, color: page === n.id ? C.charcoal : C.muted, fontWeight: page === n.id ? 600 : 400, letterSpacing: 0.8, textTransform: "uppercase" }}>{n.label}</span>
-              </button>
-            ))}
-          </div>
-
-          <div style={{ width: "100%", paddingBottom: 100 }}>
-
-            {/* HOME */}
-            {page === "home" && (
-              <div>
-                <div style={{ background: "linear-gradient(150deg, " + C.charcoal + " 0%, #3d2820 60%, " + C.berry + " 100%)", padding: "48px 20px 28px", borderRadius: "0 0 28px 28px", position: "relative", overflow: "hidden" }}>
-                  <div style={{ position: "absolute", top: -30, right: -30, width: 140, height: 140, borderRadius: "50%", background: "rgba(232,180,160,0.08)" }}></div>
-                  <div style={{ position: "absolute", bottom: -20, right: 40, width: 80, height: 80, borderRadius: "50%", background: "rgba(212,165,181,0.1)" }}></div>
-                  <Clock />
-                  <div style={{ marginTop: 16, fontFamily: "'Cormorant Garamond', serif", fontSize: 26, fontWeight: 300, color: "#fff", letterSpacing: 0.5 }}>
-                    {greeting}, Maia
-                  </div>
-                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.38)", marginTop: 3, letterSpacing: 1.2, textTransform: "uppercase", fontWeight: 300 }}>
-                    Uke {getWeekNumber(d)} · {d.getDate()}. {MON_NO[d.getMonth()]}
-                  </div>
-                </div>
-
-                <div style={{ padding: "14px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                    <Card title="Varsler" emoji="🔔"><AlertPanel events={events} supplements={supplements} water={water} /></Card>
-                    <Card title="Timeplan" emoji="📅"><TodaySchedule events={events} /></Card>
-                  </div>
-
-                  <Card title="Dagens gjøremål" emoji="✓">
-                    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                      {allTodos.slice(0, 7).map(t => {
-                        const done = (t.doneOn || []).includes(today);
-                        return (
-                          <div key={t.id} onClick={() => toggleTodo(t.id)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", borderRadius: 10,
-                            background: done ? C.sageLight : C.cream, border: "1px solid " + (done ? C.sage : C.border), cursor: "pointer", transition: "all 0.2s" }}>
-                            <div style={{ width: 17, height: 17, borderRadius: "50%", border: "2px solid " + (done ? C.sageDark : C.rose), background: done ? C.sageDark : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all 0.2s" }}>
-                              {done && <span style={{ color: "white", fontSize: 9 }}>✓</span>}
-                            </div>
-                            <span style={{ fontSize: 12, fontFamily: "'Jost'", color: done ? C.muted : C.charcoal, textDecoration: done ? "line-through" : "none", flex: 1 }}>{t.text}</span>
-                          </div>
-                        );
-                      })}
-                      {allTodos.length === 0 && <div style={{ fontSize: 12, color: C.muted, textAlign: "center", padding: "10px 0", fontStyle: "italic" }}>Alt er gjort for i dag ✨</div>}
-                    </div>
-                  </Card>
-
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, alignItems: "start" }}>
-                    <Card title="Notiser" emoji="🖊"><QuickNotes notes={notes} onChange={setNotes} /></Card>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                      <Card><WaterMini data={water} onChange={setWater} /></Card>
-                      <Card><SupplMini data={supplements} onChange={setSupplements} /></Card>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* PERSONAL */}
-            {page === "personal" && (
-              <div style={{ padding: "26px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
-                <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 30, fontWeight: 300, padding: "0 4px", marginBottom: 4 }}>Personlig</div>
-                <Card title="Daglige gjøremål" emoji="📋"><TodoList todos={pTodos} onChange={setPTodos} accent={C.roseDark} /></Card>
-                <Card title="Rengjøringsrotasjon" emoji="🧹"><CleaningRotation data={cleaning} onChange={setCleaning} /></Card>
-                <Card title="Måltider" emoji="🍽️"><MealTracker data={meals} onChange={setMeals} /></Card>
-                <Card title="Søvn og rutiner" emoji="🌙"><SleepWidget settings={sleep} onSettings={setSleep} /></Card>
-              </div>
-            )}
-
-            {/* STUDY */}
-            {page === "study" && (
-              <div style={{ padding: "26px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
-                <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 30, fontWeight: 300, padding: "0 4px", marginBottom: 4 }}>Studie</div>
-                <Card title="Gjøremål" emoji="📚"><TodoList todos={sTodos} onChange={setSTodos} accent="#c4a060" /></Card>
-                <Card title="Viktige datoer" emoji="📌">
-                  {events.filter(e => e.tag === "study" && e.date >= todayKey()).length === 0
-                    ? <div style={{ fontSize: 12, color: C.muted, textAlign: "center", padding: "12px 0", fontStyle: "italic" }}>Ingen studiehendelser. Legg til via Kalender med tag «Studie».</div>
-                    : events.filter(e => e.tag === "study" && e.date >= todayKey()).sort((a, b) => a.date.localeCompare(b.date)).slice(0, 10).map(ev => (
-                      <div key={ev.id} style={{ display: "flex", gap: 14, padding: "9px 0", borderBottom: "1px solid " + C.parchment, alignItems: "flex-start" }}>
-                        <div style={{ textAlign: "center", minWidth: 38, background: C.parchment, borderRadius: 8, padding: "4px 0" }}>
-                          <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 20, color: C.charcoal, lineHeight: 1 }}>{parseInt(ev.date.split("-")[2])}</div>
-                          <div style={{ fontSize: 9, color: C.muted, textTransform: "uppercase", letterSpacing: 0.5, fontFamily: "'Jost'" }}>{MON_S[parseInt(ev.date.split("-")[1]) - 1]}</div>
-                        </div>
-                        <div>
-                          <div style={{ fontSize: 13, color: C.charcoal, fontFamily: "'Jost'" }}>{ev.title}</div>
-                          {ev.time && <div style={{ fontSize: 11, color: C.muted, fontFamily: "'Jost'" }}>kl. {ev.time}</div>}
-                          {ev.note && <div style={{ fontSize: 11, color: C.muted, fontFamily: "'Jost'", fontStyle: "italic" }}>{ev.note}</div>}
-                        </div>
-                      </div>
-                    ))
-                  }
-                </Card>
-              </div>
-            )}
-
-            {/* HEALTH */}
-            {page === "health" && (
-              <div style={{ padding: "26px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
-                <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 30, fontWeight: 300, padding: "0 4px", marginBottom: 4 }}>Helse</div>
-                <Card title="Tilskudd" emoji="✨"><SupplMini data={supplements} onChange={setSupplements} full={true} /></Card>
-                <Card title="Vann" emoji="💧"><WaterMini data={water} onChange={setWater} /></Card>
-                <Card title="Skritt" emoji="🚶‍♀️"><StepTracker data={steps} onChange={setSteps} /></Card>
-                <Card title="Trening" emoji="🏋️"><TrainingPlan data={training} onChange={setTraining} /></Card>
-                <Card title="Måltider" emoji="🍽️"><MealTracker data={meals} onChange={setMeals} /></Card>
-                <Card title="Menstruasjon" emoji="🌸"><MenstrualTracker data={menstrual} onChange={setMenstrual} /></Card>
-              </div>
-            )}
-
-            {/* CALENDAR */}
-            {page === "calendar" && (
-              <div style={{ padding: "26px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
-                <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 30, fontWeight: 300, padding: "0 4px", marginBottom: 4 }}>Kalender</div>
-                <Card><CalendarFull events={events} onEvents={setEvents} /></Card>
-              </div>
-            )}
-
-          </div>
-        </div>
-      );
-    }
-
-    const root = ReactDOM.createRoot(document.getElementById("root"));
-    root.render(<App />);
-  </script>
+ReactDOM.createRoot(document.getElementById(“root”)).render(<App/>);
+</script>
 
 </body>
 </html>
